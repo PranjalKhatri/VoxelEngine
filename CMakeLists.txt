@@ -24,6 +24,7 @@ target_link_directories(LearnOpengl PRIVATE ${CMAKE_SOURCE_DIR}/lib)
 add_library(glad STATIC ${CMAKE_SOURCE_DIR}/src/glad.c)
 
 target_include_directories(glad PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(LearnOpengl PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 # Windows system libs + GLFW + OpenGL + glad
 target_link_libraries(LearnOpengl PRIVATE
