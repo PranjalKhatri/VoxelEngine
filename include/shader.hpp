@@ -3,7 +3,6 @@
 #include "glad/glad.h"
 #include <string>
 #include <string_view>
-#include <vector>
 
 namespace pop {
 namespace gfx {
@@ -56,6 +55,8 @@ class ShaderProgram {
     bool Link();
     // starts using this shader program from now on
     void use();
+    // Returns the shader id
+    GLuint id() const { return program_id_; }
     // Returns last error message (empty if none)
     std::string GetError() const { return error_msg_; }
 
