@@ -38,4 +38,25 @@ enum class GLType : GLenum {
     kHalfFloat = GL_HALF_FLOAT,
     kFixed     = GL_FIXED
 };
+enum class TextureFormat {
+    kRGB          = GL_RGB,
+    kRG           = GL_RG,
+    kRGBA         = GL_RGBA,
+    kRed          = GL_RED,
+    kDepth        = GL_DEPTH,
+    kDepthStencil = GL_DEPTH_STENCIL
+};
+
+enum class TextureWrap {
+    kRepeat         = GL_REPEAT,
+    kMirroredRepeat = GL_MIRRORED_REPEAT,
+    kClampToEdge    = GL_CLAMP_TO_EDGE,
+    kClampToBorder  = GL_CLAMP_TO_BORDER
+};
+enum class TextureType {
+    kTexture1D = GL_TEXTURE_1D,
+    kTexture2D = GL_TEXTURE_2D,
+    kTexture3D = GL_TEXTURE_3D,
+};
+enum class TextureFilter { kNearest = GL_NEAREST, kLinear = GL_LINEAR };
 }  // namespace pop::gfx
