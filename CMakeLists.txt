@@ -10,11 +10,15 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Add source files from src/
 file(GLOB SRC_FILES src/*.cpp)
-# copies shader to build directory on every build and not configure only
-add_custom_target(copy_shaders ALL
+# Copy shaders and textures into the build directory
+add_custom_target(copy_assets ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/shaders
         ${CMAKE_BINARY_DIR}/shaders
+
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/textures
+        ${CMAKE_BINARY_DIR}/textures
 )
 
 add_executable(LearnOpengl)
