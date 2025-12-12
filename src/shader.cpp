@@ -70,6 +70,32 @@ bool Shader::Compile() {
     return true;
 }
 
+void ShaderProgram::SetUniformBool(std::string_view name, bool value) {
+    glUniform1i(glGetUniformLocation(program_id_, name.data()),
+                static_cast<int>(value));
+}
+
+void ShaderProgram::SetUniformInt(std::string_view name, int value) {
+    glUniform1i(glGetUniformLocation(program_id_, name.data()), value);
+}
+
+void ShaderProgram::SetUniformFloat(std::string_view name, float value) {
+    glUniform1f(glGetUniformLocation(program_id_, name.data()), value);
+}
+
+void ShaderProgram::SetUniformFloat2(std::string_view name, float x, float y) {
+    glUniform2f(glGetUniformLocation(program_id_, name.data()), x, y);
+}
+
+void ShaderProgram::SetUniformFloat3(std::string_view name, float x, float y,
+                                     float z) {
+    glUniform3f(glGetUniformLocation(program_id_, name.data()), x, y, z);
+}
+
+void ShaderProgram::SetUniformFloat4(std::string_view name, float x, float y,
+                                     float z, float w) {
+    glUniform4f(glGetUniformLocation(program_id_, name.data()), x, y, z, w);
+}
 ShaderProgram::ShaderProgram() : program_id_{glCreateProgram()} {}
 
 ShaderProgram::~ShaderProgram() {

@@ -55,6 +55,14 @@ class ShaderProgram {
     // Returns last error message (empty if none)
     std::string GetError() const { return error_msg_; }
 
+    void SetUniformBool(std::string_view name, bool value);
+    void SetUniformInt(std::string_view name, int value);
+    void SetUniformFloat(std::string_view name, float value);
+    void SetUniformFloat2(std::string_view name, float x, float y);
+    void SetUniformFloat3(std::string_view name, float x, float y, float z);
+    void SetUniformFloat4(std::string_view name, float x, float y, float z,
+                          float w);
+
    private:
     GLuint      program_id_;
     std::string error_msg_;
