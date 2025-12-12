@@ -1,5 +1,4 @@
 #include "shader.hpp"
-#include "glad/glad.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -28,7 +27,7 @@ bool Shader::LoadShader(Shader& shader, std::string_view path) {
     std::stringstream ss;
     ss << file.rdbuf();
     shader.shader_source_ = ss.str();
-    shader.loaded_ = true;
+    shader.loaded_        = true;
 
     return true;
 }
