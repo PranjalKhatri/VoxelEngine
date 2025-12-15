@@ -1,44 +1,60 @@
 cmake_minimum_required(VERSION 3.27)
 project(LearnOpengl LANGUAGES C CXX)
 
-# Use C++17
+# C++17
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# for vim
+# For clangd / vim
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Add source files from src/
+# Collect sources
 file(GLOB SRC_FILES src/*.cpp)
-# Copy shaders and textures into the build directory
+
+# Copy assets
 add_custom_target(copy_assets ALL
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/shaders
-        ${CMAKE_BINARY_DIR}/shaders
-
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/textures
-        ${CMAKE_BINARY_DIR}/textures
+        ${CMAKE_SOURCE_DIR}/assets
+        ${CMAKE_BINARY_DIR}/assets
 )
 
-add_executable(LearnOpengl)
-target_sources(
-    LearnOpengl
-    PRIVATE
-    ${SRC_FILES}
+# Executable
+add_executable(LearnOpengl ${SRC_FILES})
+add_dependencies(LearnOpengl copy_assets)
+
+# ---- External libraries ----
+
+# glad
+add_library(glad STATIC external/glad/src/glad.c)
+target_include_directories(glad PUBLIC external/glad/include)
+
+# stb_image
+add_library(stb_image STATIC external/stb_image/stb_image.cpp)
+target_include_directories(stb_image PUBLIC external/stb_image)
+
+target_include_directories(LearnOpengl PRIVATE
+    include
 )
 
-# Link directory for .lib files
-target_link_directories(LearnOpengl PRIVATE ${CMAKE_SOURCE_DIR}/lib)
+# Header-only deps
+add_library(glm INTERFACE)
+target_include_directories(glm INTERFACE external/glm)
 
-add_library(glad STATIC ${CMAKE_SOURCE_DIR}/src/glad.c)
+add_library(glfw_headers INTERFACE)
+target_include_directories(glfw_headers INTERFACE external/glfw/include)
 
-target_include_directories(glad PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_include_directories(LearnOpengl PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_link_libraries(LearnOpengl PRIVATE
+    glm
+    glfw_headers
+)
 
-# Windows system libs + GLFW + OpenGL + glad
+# Prebuilt libs (GLFW)
+target_link_directories(LearnOpengl PRIVATE lib)
+
+# Link everything
 target_link_libraries(LearnOpengl PRIVATE
     glad
+    stb_image
     glfw3
     opengl32
     gdi32
