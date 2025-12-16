@@ -35,6 +35,7 @@ void VertexArray::Bind() { glBindVertexArray(array_id_); }
 void VertexArray::UnBind() { glBindVertexArray(0); }
 
 void VertexArray::AddAttribute(Attribute attribute) {
+    Bind();
     bool is_integer_type =
         (attribute.type == GLType::kInt || attribute.type == GLType::kUInt ||
          attribute.type == GLType::kShort ||
