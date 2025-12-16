@@ -10,7 +10,7 @@ class GLBuffer {
    public:
     explicit GLBuffer(BufferType target);
     ~GLBuffer();
-    // Returns the shader id
+    // Returns the buffer id
     GLuint id() const { return buffer_id_; }
     // Binds this buffer object to the specified target
     void Bind();
