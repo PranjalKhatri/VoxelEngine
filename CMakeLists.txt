@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.27)
-project(LearnOpengl LANGUAGES C CXX)
+project(VoxelEngine LANGUAGES C CXX)
 
 # C++17
 set(CMAKE_CXX_STANDARD 17)
@@ -19,8 +19,8 @@ add_custom_target(copy_assets ALL
 )
 
 # Executable
-add_executable(LearnOpengl ${SRC_FILES})
-add_dependencies(LearnOpengl copy_assets)
+add_executable(VoxelEngine ${SRC_FILES})
+add_dependencies(VoxelEngine copy_assets)
 
 # ---- External libraries ----
 
@@ -32,27 +32,17 @@ target_include_directories(glad PUBLIC external/glad/include)
 add_library(stb_image STATIC external/stb_image/stb_image.cpp)
 target_include_directories(stb_image PUBLIC external/stb_image)
 
-target_include_directories(LearnOpengl PRIVATE
+target_include_directories(VoxelEngine PRIVATE
     include
-)
-
-# Header-only deps
-add_library(glm INTERFACE)
-target_include_directories(glm INTERFACE external/glm)
-
-add_library(glfw_headers INTERFACE)
-target_include_directories(glfw_headers INTERFACE external/glfw/include)
-
-target_link_libraries(LearnOpengl PRIVATE
-    glm
-    glfw_headers
+    external/glm
+    external/glfw/include
 )
 
 # Prebuilt libs (GLFW)
-target_link_directories(LearnOpengl PRIVATE lib)
+target_link_directories(VoxelEngine PRIVATE lib)
 
 # Link everything
-target_link_libraries(LearnOpengl PRIVATE
+target_link_libraries(VoxelEngine PRIVATE
     glad
     stb_image
     glfw3
