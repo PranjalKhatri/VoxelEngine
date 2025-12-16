@@ -46,3 +46,5 @@ build/
 compile_commands.json
 .clang-format
 .cache
+
+build.bat
