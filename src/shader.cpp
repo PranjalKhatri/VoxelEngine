@@ -1,4 +1,5 @@
 #include "shader.hpp"
+#include "glm/gtc/type_ptr.hpp"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -8,7 +9,7 @@ namespace gfx {
 
 Shader::Shader(ShaderType stype)
     : shader_type_{stype},
-      shader_id_{glCreateShader(static_cast<GLuint>(stype))},
+      shader_id_{glCreateShader(static_cast<ShaderHandle>(stype))},
       loaded_{false} {}
 
 Shader::~Shader() {
@@ -97,10 +98,10 @@ void ShaderProgram::SetUniformFloat4(std::string_view name, float x, float y,
     glUniform4f(glGetUniformLocation(program_id_, name.data()), x, y, z, w);
 }
 
-void ShaderProgram::SetUniformMat4(std::string_view name, float* ptr,
+void ShaderProgram::SetUniformMat4(std::string_view name, glm::mat4 ptr,
                                    bool transpose) {
     glUniformMatrix4fv(glGetUniformLocation(program_id_, name.data()), 1,
-                       transpose ? GL_TRUE : GL_FALSE, ptr);
+                       transpose ? GL_TRUE : GL_FALSE, glm::value_ptr(ptr));
 }
 
 ShaderProgram::ShaderProgram() : program_id_{glCreateProgram()} {}

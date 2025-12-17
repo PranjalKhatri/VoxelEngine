@@ -2,10 +2,12 @@
 
 #include "glad/glad.h"
 #include "gl_types.hpp"
+#include "glm/fwd.hpp"
 #include <string>
 #include <string_view>
 
 namespace pop::gfx {
+using ShaderHandle = uint32_t;
 
 class Shader {
    public:
@@ -21,7 +23,7 @@ class Shader {
     bool Compile();
 
     // Returns the shader id
-    GLuint id() const { return shader_id_; }
+    ShaderHandle id() const { return shader_id_; }
 
     // Returns last error message (empty if none)
     std::string GetError() const { return error_msg_; }
@@ -30,11 +32,11 @@ class Shader {
     ShaderType type() const { return shader_type_; }
 
    private:
-    ShaderType  shader_type_;
-    GLuint      shader_id_;
-    std::string shader_source_;
-    std::string error_msg_;
-    bool        loaded_;
+    ShaderType   shader_type_;
+    ShaderHandle shader_id_;
+    std::string  shader_source_;
+    std::string  error_msg_;
+    bool         loaded_;
 
     static constexpr std::string_view kNotLoadedMsg =
         "Load the Shader before compiling it.";
@@ -51,7 +53,7 @@ class ShaderProgram {
     // starts using this shader program from now on
     void use();
     // Returns the shader id
-    GLuint id() const { return program_id_; }
+    ShaderHandle id() const { return program_id_; }
     // Returns last error message (empty if none)
     std::string GetError() const { return error_msg_; }
 
@@ -62,10 +64,10 @@ class ShaderProgram {
     void SetUniformFloat3(std::string_view name, float x, float y, float z);
     void SetUniformFloat4(std::string_view name, float x, float y, float z,
                           float w);
-    void SetUniformMat4(std::string_view name, float* ptr, bool transpose);
+    void SetUniformMat4(std::string_view name, glm::mat4 ptr, bool transpose);
 
    private:
-    GLuint      program_id_;
-    std::string error_msg_;
+    ShaderHandle program_id_;
+    std::string  error_msg_;
 };
 }  // namespace pop::gfx
