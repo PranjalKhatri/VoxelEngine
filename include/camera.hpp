@@ -7,8 +7,13 @@ namespace pop::gfx {
 
 class Camera {
    public:
+    enum class CameraMovement { Forward, Backward, Right, Left };
+
     Camera(glm::vec3 position, glm::vec3 target, glm::vec3 up);
     glm::mat4 GetViewMatrix() const;
+
+    virtual void ProcessKeyboard(CameraMovement direction, float deltaTime) {};
+    virtual void ProcessMouseMovement(float xoffset, float yoffset) {};
 
    protected:
     glm::vec3 position_;
@@ -25,14 +30,14 @@ class FlyCam : public Camera {
     float yaw_            = -90.0f;  // degrees
     float pitch_          = 0.0f;
 
-    enum class CameraMovement { Forward, Backward, Right, Left };
-
-    void ProcessKeyboard(CameraMovement direction, float deltaTime);
-    void ProcessMouseMovement(float xoffset, float yoffset,
-                              bool constrainPitch = true);
+    void ProcessKeyboard(CameraMovement direction, float deltaTime) override;
+    void ProcessMouseMovement(float xoffset, float yoffset) override;
 
    private:
-    void updateCameraVectors();
+    bool  first_mouse_ = true;
+    float last_x_      = 0.0f;
+    float last_y_      = 0.0f;
+    void  updateCameraVectors();
 };
 
 }  // namespace pop::gfx

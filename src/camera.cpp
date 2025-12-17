@@ -28,19 +28,25 @@ void FlyCam::ProcessKeyboard(CameraMovement direction, float deltaTime) {
     if (direction == CameraMovement::Left) position_ -= right_ * velocity;
 }
 
-void FlyCam::ProcessMouseMovement(float xoffset, float yoffset,
-                                  bool constrainPitch) {
+void FlyCam::ProcessMouseMovement(float xpos, float ypos) {
+    if (first_mouse_) {
+        last_x_      = xpos;
+        last_y_      = ypos;
+        first_mouse_ = false;
+        return;
+    }
+
+    float xoffset = xpos - last_x_;
+    float yoffset = last_y_ - ypos;
+
+    last_x_            = xpos;
+    last_y_            = ypos;
     float sensitivity  = 0.1f;
     xoffset           *= sensitivity;
     yoffset           *= sensitivity;
 
     yaw_   += xoffset;
     pitch_ += yoffset;
-
-    if (constrainPitch) {
-        if (pitch_ > 89.0f) pitch_ = 89.0f;
-        if (pitch_ < -89.0f) pitch_ = -89.0f;
-    }
 
     updateCameraVectors();
 }
