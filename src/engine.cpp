@@ -74,11 +74,6 @@ void Engine::Render() {
         drawable->Draw();
     }
 }
-void Engine::CamProcessMouseMovement(float xoffset, float yoffset) {
-    if (main_camera_) {
-        main_camera_->ProcessMouseMovement(xoffset, yoffset);
-    }
-}
 
 void Engine::FramebufferSizeCallback(GLFWwindow *window, int width,
                                      int height) {
