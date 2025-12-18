@@ -3,6 +3,9 @@
 #include "glad/glad.h"
 
 namespace pop::gfx {
+
+using ShaderHandle = uint32_t;
+
 enum class ShaderType : GLuint {
     Vertex   = GL_VERTEX_SHADER,
     Fragment = GL_FRAGMENT_SHADER

@@ -1,13 +1,11 @@
 #pragma once
 
-#include "glad/glad.h"
 #include "gl_types.hpp"
 #include "glm/fwd.hpp"
 #include <string>
 #include <string_view>
 
 namespace pop::gfx {
-using ShaderHandle = uint32_t;
 
 class Shader {
    public:
