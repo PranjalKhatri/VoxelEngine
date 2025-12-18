@@ -11,6 +11,7 @@
 #include "stb_image.h"
 #include "camera.hpp"
 #include "cube_renderable.hpp"
+#include "chunk.hpp"
 
 #include <iostream>
 #include <memory>
@@ -23,7 +24,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
 const unsigned int SCR_WIDTH  = 800;
 const unsigned int SCR_HEIGHT = 600;
-int                main() {
+
+int main() {
     // init
     GLFW::init(3, 3, GLFW::GLFW_PROFILE::kCoreProfile);
     GLFWwindow* window = glfwCreateWindow(800, 600, "VoxelEngine", NULL, NULL);
@@ -41,13 +43,16 @@ int                main() {
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glEnable(GL_DEPTH_TEST);
 
+    glfwSetErrorCallback([](int code, const char* desc) {
+        std::cerr << "GLFW Error [" << code << "]: " << desc << std::endl;
+    });
     glm::mat4 projection =
         glm::perspective(glm::radians(45.0f),
-                                        (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+                         (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
     Engine engine{projection, window};
 
     auto cam = std::make_shared<FlyCam>(glm::vec3{0, 0, 3}, glm::vec3{0, 0, 0},
-                                                       glm::vec3{0, 1, 0});
+                                        glm::vec3{0, 1, 0});
     engine.SetMainCamera(cam);
     std::cout << "Engine initialization done!\n";
     // // Shader
@@ -64,14 +69,20 @@ int                main() {
         cubeShader->Link();
 
         cubeShader->use();
-        cubeShader->SetUniformInt("tex1", 0);
-        cubeShader->SetUniformInt("tex2", 1);
+        // cubeShader->SetUniformInt("tex1", 0);
+        // cubeShader->SetUniformInt("tex2", 1);
     }
-    auto cube = std::make_shared<gfx::CubeRenderable>(
-        cubeShader->id(), "assets/textures/wood.jpg",
-        "assets/textures/face.png");
+    std::cout << "Cube Shader constructed\n";
+    auto chunk = std::make_shared<voxel::Chunk>();
+    chunk->SetShader(cubeShader->id());
+    // auto cube = std::make_shared<gfx::CubeRenderable>(
+    //     cubeShader->id(), "assets/textures/wood.jpg",
+    //     "assets/textures/face.png");
+    std::cout << "chunk shader set and constructed\n";
+    chunk->GenerateMesh();
     engine.AddShaderProgram(std::move(cubeShader));
-    engine.AddRenderable(cube);
+    engine.AddRenderable(chunk->GetSolidRenderable());
+    // engine.AddRenderable(cube);
     engine.Run();
 
     // cleanup resources and terminate
