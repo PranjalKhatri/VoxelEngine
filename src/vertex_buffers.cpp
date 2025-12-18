@@ -15,6 +15,7 @@ GLBuffer::~GLBuffer() {
 void GLBuffer::Bind() {
     glBindBuffer(static_cast<GLenum>(target_), buffer_id_);
 }
+void GLBuffer::UnBind() { glBindBuffer(static_cast<GLenum>(target_), 0); }
 
 void GLBuffer::BufferData(GLsizeiptr size, const void* data, GLenum usage) {
     // Bind buffer first
