@@ -14,6 +14,8 @@ class GLBuffer {
     GLuint id() const { return buffer_id_; }
     // Binds this buffer object to the specified target
     void Bind();
+    // UnBinds this buffer object to avoid state pollution
+    void UnBind();
     // calls glBindBuffer with target and then bufferData
     void BufferData(GLsizeiptr size, const void* data, GLenum usage);
 
