@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include "glad/glad.h"
 
 namespace pop::gfx {
@@ -7,7 +8,7 @@ namespace pop::gfx {
 using ShaderHandle  = uint32_t;
 using TextureHandle = uint32_t;
 
-enum class ShaderType : GLuint {
+enum class ShaderStage : GLuint {
     Vertex   = GL_VERTEX_SHADER,
     Fragment = GL_FRAGMENT_SHADER
 };
