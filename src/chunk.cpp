@@ -5,7 +5,6 @@
 #include "vertex_buffers.hpp"
 #include <iostream>
 #include <memory>
-#include <stdexcept>
 
 namespace pop::voxel {
 
@@ -23,7 +22,8 @@ void ChunkRenderable::AddAttribute(const gfx::Attribute &attribute) {
 void ChunkRenderable::AddVertexData(const std::vector<float> &data) {
     vertex_data_->insert(vertex_data_->end(), data.begin(), data.end());
 }
-void ChunkRenderable::AddTexture(std::shared_ptr<gfx::TextureBinding> texture) {
+void ChunkRenderable::AddTexture(
+    std::shared_ptr<gfx::rtypes::TextureBinding> texture) {
     for (const auto &i : textures_) {
         if (i->slot == texture->slot) {
             std::cerr << "Texture slot already in use: " << int(texture->slot)
@@ -35,8 +35,13 @@ void ChunkRenderable::AddTexture(std::shared_ptr<gfx::TextureBinding> texture) {
 }
 void ChunkRenderable::Upload() {
     if (!vertex_data_ || vertex_data_->empty()) {
+        std::cout << "Upload called on empty data\n";
         return;
     }
+    if (attributes_.empty()) {
+        std::cout << "Attributes not filled\n";
+    }
+
     vao_.Bind();
     vbo_.Bind();
 
@@ -49,7 +54,7 @@ void ChunkRenderable::Upload() {
     vbo_.UnBind();
     vao_.UnBind();
     std::cout << "Chunk Renderale uploaded " << vertex_data_->size()
-              << " values\n";
+              << " values vao_: " << vao_.id() << "\n";
 }
 void ChunkRenderable::Draw() {
     vao_.Bind();
@@ -72,9 +77,13 @@ Voxel::Type Voxel::GetType() const { return type_; }
 void Voxel::SetType(Voxel::Type vtype) { type_ = vtype; }
 
 // ==============CHUNK==============
-Chunk::Chunk() : solid_mesh_{}, voxel_data_{} {}
+Chunk::Chunk(glm::ivec3 chunkOffset)
+    : solid_mesh_{}, voxel_data_{}, chunk_offset_(chunkOffset) {
+    std::cout << "Chunk created with offset : " << chunkOffset.x << " "
+              << chunkOffset.y << " " << chunkOffset.z << "\n";
+}
 Chunk::~Chunk() {}
-int Chunk::Index(int x, int y, int z) const {
+int Chunk::Index(int x, int y, int z) {
     return x + kSize_x * (y + kSize_y * z);
 }
 
@@ -107,7 +116,7 @@ void Chunk::GenerateMesh() {
         {0, 3, gfx::GLType::kFloat, false, 5 * sizeof(float), 0});
     solid_mesh_->AddAttribute({1, 2, gfx::GLType::kFloat, false,
                                5 * sizeof(float), 3 * sizeof(float)});
-    std::cout << "Chunk solid mesh genertion done!\n";
+    // std::cout << "Chunk solid mesh genertion done!\n";
 }
 
 void Chunk::GenerateVoxel(int x, int y, int z) {
@@ -120,9 +129,12 @@ void Chunk::GenerateVoxel(int x, int y, int z) {
     voxel_vertices.reserve(total_floats);
 
     for (int i = 0; i < total_floats; i += floats_per_vertex) {
-        float px = vertices[i + 0] / 2.0 + static_cast<float>(x);
-        float py = vertices[i + 1] / 2.0 + static_cast<float>(y);
-        float pz = vertices[i + 2] / 2.0 + static_cast<float>(z);
+        float px =
+            chunk_offset_.x + vertices[i + 0] / 2.0 + static_cast<float>(x);
+        float py =
+            chunk_offset_.y + vertices[i + 1] / 2.0 + static_cast<float>(y);
+        float pz =
+            chunk_offset_.z + vertices[i + 2] / 2.0 + static_cast<float>(z);
 
         float u = vertices[i + 3];
         float v = vertices[i + 4];

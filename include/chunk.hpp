@@ -1,6 +1,8 @@
 #pragma once
 
 #include "gl_types.hpp"
+#include "glm/vec3.hpp"
+#include "glm/fwd.hpp"
 #include "renderable.hpp"
 #include "rendertypes.hpp"
 #include "vertex_buffers.hpp"
@@ -33,7 +35,7 @@ class ChunkRenderable : public Renderable {
     void              Draw() override;
     gfx::ShaderHandle GetShaderProgId() const override;
 
-    void AddTexture(std::shared_ptr<gfx::TextureBinding> texture);
+    void AddTexture(std::shared_ptr<gfx::rtypes::TextureBinding> texture);
     void AddAttribute(const gfx::Attribute& attribute);
     void AddVertexData(const std::vector<float>& data);
 
@@ -42,7 +44,7 @@ class ChunkRenderable : public Renderable {
     gfx::GLBuffer     vbo_{gfx::BufferType::kArrayBuffer};
     gfx::GLBuffer     ebo_{gfx::BufferType::kElementArrayBuffer};
     gfx::ShaderHandle shader_id_;
-    std::vector<std::shared_ptr<gfx::TextureBinding>> textures_;
+    std::vector<std::shared_ptr<gfx::rtypes::TextureBinding>> textures_;
 
     std::unique_ptr<std::vector<float>> vertex_data_;
     std::vector<gfx::Attribute>         attributes_;
@@ -54,13 +56,13 @@ class Chunk {
     constexpr static int kSize_y = 16;
     constexpr static int kSize_z = 16;
 
-    Chunk();
+    Chunk(glm::ivec3 chunkOffset);
     ~Chunk();
 
     void GenerateMesh();
     void SetShader(gfx::ShaderHandle id);
 
-    int Index(int x, int y, int z) const;
+    static int Index(int x, int y, int z);
 
     std::shared_ptr<ChunkRenderable> GetSolidRenderable() const;
 
@@ -68,6 +70,8 @@ class Chunk {
     void GenerateVoxel(int x, int y, int z);
 
    private:
+    glm::ivec3 chunk_offset_;
+
     gfx::ShaderHandle                solid_shader_id_;
     std::unique_ptr<Voxel[]>         voxel_data_;
     std::shared_ptr<ChunkRenderable> solid_mesh_;
