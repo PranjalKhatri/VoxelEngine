@@ -14,6 +14,7 @@ class Camera {
 
     virtual void ProcessKeyboard(CameraMovement direction, float deltaTime) {};
     virtual void ProcessMouseMovement(float xoffset, float yoffset) {};
+    glm::vec3    GetPosition() const { return position_; }
 
    protected:
     glm::vec3 position_;
