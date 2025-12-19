@@ -4,7 +4,8 @@
 
 namespace pop::gfx {
 
-using ShaderHandle = uint32_t;
+using ShaderHandle  = uint32_t;
+using TextureHandle = uint32_t;
 
 enum class ShaderType : GLuint {
     Vertex   = GL_VERTEX_SHADER,

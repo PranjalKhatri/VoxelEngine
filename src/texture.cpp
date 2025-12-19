@@ -30,10 +30,10 @@ Texture::Texture(TextureType type)
                     GL_REPEAT);
 
     // Default filtering
-    glTexParameteri(static_cast<GLenum>(tex_type_), GL_TEXTURE_MIN_FILTER,
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
                     GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(static_cast<GLenum>(tex_type_), GL_TEXTURE_MAG_FILTER,
-                    GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 Texture::~Texture() {
     if (data_) {

@@ -25,7 +25,7 @@ class Texture {
     void Bind(GLenum unit = 0) const;
     void Unbind();
 
-    GLuint id() const { return tex_id_; }
+    TextureHandle id() const { return tex_id_; }
 
    private:
     GLuint         tex_id_ = 0;
