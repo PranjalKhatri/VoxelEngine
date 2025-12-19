@@ -2,6 +2,7 @@
 
 #include "gl_types.hpp"
 #include "renderable.hpp"
+#include "rendertypes.hpp"
 #include "vertex_buffers.hpp"
 #include <cstdint>
 #include <memory>
@@ -32,6 +33,7 @@ class ChunkRenderable : public Renderable {
     void              Draw() override;
     gfx::ShaderHandle GetShaderProgId() const override;
 
+    void AddTexture(std::shared_ptr<gfx::TextureBinding> texture);
     void AddAttribute(const gfx::Attribute& attribute);
     void AddVertexData(const std::vector<float>& data);
 
@@ -40,6 +42,7 @@ class ChunkRenderable : public Renderable {
     gfx::GLBuffer     vbo_{gfx::BufferType::kArrayBuffer};
     gfx::GLBuffer     ebo_{gfx::BufferType::kElementArrayBuffer};
     gfx::ShaderHandle shader_id_;
+    std::vector<std::shared_ptr<gfx::TextureBinding>> textures_;
 
     std::unique_ptr<std::vector<float>> vertex_data_;
     std::vector<gfx::Attribute>         attributes_;

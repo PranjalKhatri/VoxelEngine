@@ -1,16 +1,19 @@
 #include "chunk.hpp"
 #include "gl_types.hpp"
 #include "glad/glad.h"
+#include "rendertypes.hpp"
 #include "vertex_buffers.hpp"
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 
 namespace pop::voxel {
 
+// ===============Chunk Renderable==============
 ChunkRenderable::ChunkRenderable(gfx::ShaderHandle shaderId)
-    : shader_id_{shaderId} {
-    vertex_data_ = std::make_unique<std::vector<float>>();
-}
+    : shader_id_{shaderId},
+      vertex_data_{std::make_unique<std::vector<float>>()} {}
+
 gfx::ShaderHandle ChunkRenderable::GetShaderProgId() const {
     return shader_id_;
 }
@@ -20,11 +23,20 @@ void ChunkRenderable::AddAttribute(const gfx::Attribute &attribute) {
 void ChunkRenderable::AddVertexData(const std::vector<float> &data) {
     vertex_data_->insert(vertex_data_->end(), data.begin(), data.end());
 }
+void ChunkRenderable::AddTexture(std::shared_ptr<gfx::TextureBinding> texture) {
+    for (const auto &i : textures_) {
+        if (i->slot == texture->slot) {
+            std::cerr << "Texture slot already in use: " << int(texture->slot)
+                      << "\n";
+            return;  // ❗ do NOT throw
+        }
+    }
+    textures_.emplace_back(std::move(texture));
+}
 void ChunkRenderable::Upload() {
     if (!vertex_data_ || vertex_data_->empty()) {
         return;
     }
-
     vao_.Bind();
     vbo_.Bind();
 
@@ -41,6 +53,11 @@ void ChunkRenderable::Upload() {
 }
 void ChunkRenderable::Draw() {
     vao_.Bind();
+
+    for (auto i : textures_) {
+        i->texture->Bind(i->slot);
+    }
+
     glDrawArrays(GL_TRIANGLES, 0, vertex_data_->size() / 5);
 }
 
@@ -63,6 +80,9 @@ int Chunk::Index(int x, int y, int z) const {
 
 void Chunk::SetShader(gfx::ShaderHandle id) { solid_shader_id_ = id; }
 std::shared_ptr<ChunkRenderable> Chunk::GetSolidRenderable() const {
+    if (!solid_mesh_) {
+        std::cout << "Call to GetSolidRenderable made without construction!\n";
+    }
     return solid_mesh_;
 }
 
@@ -100,9 +120,9 @@ void Chunk::GenerateVoxel(int x, int y, int z) {
     voxel_vertices.reserve(total_floats);
 
     for (int i = 0; i < total_floats; i += floats_per_vertex) {
-        float px = vertices[i + 0] + static_cast<float>(x);
-        float py = vertices[i + 1] + static_cast<float>(y);
-        float pz = vertices[i + 2] + static_cast<float>(z);
+        float px = vertices[i + 0] / 2.0 + static_cast<float>(x);
+        float py = vertices[i + 1] / 2.0 + static_cast<float>(y);
+        float pz = vertices[i + 2] / 2.0 + static_cast<float>(z);
 
         float u = vertices[i + 3];
         float v = vertices[i + 4];
