@@ -69,17 +69,22 @@ int main() {
         cubeShader->Link();
 
         cubeShader->use();
-        // cubeShader->SetUniformInt("tex1", 0);
+        cubeShader->SetUniformInt("tex1", 0);
         // cubeShader->SetUniformInt("tex2", 1);
     }
     std::cout << "Cube Shader constructed\n";
+    auto wood = std::make_shared<TextureBinding>(
+        TextureBinding{std::make_shared<Texture>(TextureType::kTexture2D), 0});
+    wood->texture->LoadFromFile("assets/textures/wood.jpg", true);
     auto chunk = std::make_shared<voxel::Chunk>();
     chunk->SetShader(cubeShader->id());
+    chunk->GenerateMesh();
+    chunk->GetSolidRenderable()->AddTexture(wood);
+
     // auto cube = std::make_shared<gfx::CubeRenderable>(
     //     cubeShader->id(), "assets/textures/wood.jpg",
     //     "assets/textures/face.png");
     std::cout << "chunk shader set and constructed\n";
-    chunk->GenerateMesh();
     engine.AddShaderProgram(std::move(cubeShader));
     engine.AddRenderable(chunk->GetSolidRenderable());
     // engine.AddRenderable(cube);
