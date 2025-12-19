@@ -9,7 +9,7 @@ namespace pop::gfx {
 
 class Shader {
    public:
-    explicit Shader(ShaderType stype);
+    explicit Shader(ShaderStage stype);
     ~Shader();
 
     // Loads shader source from file
@@ -21,16 +21,16 @@ class Shader {
     bool Compile();
 
     // Returns the shader id
-    ShaderHandle id() const { return shader_id_; }
+    ShaderHandle GetHandle() const { return shader_id_; }
 
     // Returns last error message (empty if none)
     std::string GetError() const { return error_msg_; }
 
     // Returns type
-    ShaderType type() const { return shader_type_; }
+    ShaderStage type() const { return shader_type_; }
 
    private:
-    ShaderType   shader_type_;
+    ShaderStage  shader_type_;
     ShaderHandle shader_id_;
     std::string  shader_source_;
     std::string  error_msg_;
