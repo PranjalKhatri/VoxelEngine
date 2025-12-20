@@ -28,9 +28,9 @@ class Texture {
     TextureHandle GetHandle() const { return tex_id_; }
 
    private:
-    GLuint         tex_id_ = 0;
-    int            width_, height_, nchannels_;
-    unsigned char* data_;
+    GLuint         tex_id_{};
+    int            width_{}, height_{}, nchannels_{};
+    unsigned char* data_{};
     TextureType    tex_type_;
 };
 

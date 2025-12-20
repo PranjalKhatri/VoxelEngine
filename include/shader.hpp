@@ -30,11 +30,11 @@ class Shader {
     ShaderStage type() const { return shader_type_; }
 
    private:
-    ShaderStage  shader_type_;
-    ShaderHandle shader_id_;
-    std::string  shader_source_;
-    std::string  error_msg_;
-    bool         loaded_;
+    ShaderStage  shader_type_{};
+    ShaderHandle shader_id_{};
+    std::string  shader_source_{};
+    std::string  error_msg_{};
+    bool         loaded_{};
 
     static constexpr std::string_view kNotLoadedMsg =
         "Load the Shader before compiling it.";
@@ -65,7 +65,7 @@ class ShaderProgram {
     void SetUniformMat4(std::string_view name, glm::mat4 ptr, bool transpose);
 
    private:
-    ShaderHandle program_id_;
-    std::string  error_msg_;
+    ShaderHandle program_id_{};
+    std::string  error_msg_{};
 };
 }  // namespace pop::gfx
