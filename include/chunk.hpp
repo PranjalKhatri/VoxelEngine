@@ -29,7 +29,7 @@ class Voxel {
 class ChunkRenderable : public Renderable {
    public:
     ChunkRenderable(gfx::ShaderHandle shaderId);
-    ~ChunkRenderable() = default;
+    ~ChunkRenderable();
 
     void              Upload() override;
     void              Draw() override;
@@ -40,9 +40,9 @@ class ChunkRenderable : public Renderable {
     void AddVertexData(const std::vector<float>& data);
 
    private:
-    gfx::VertexArray  vao_;
-    gfx::GLBuffer     vbo_{gfx::BufferType::kArrayBuffer};
-    gfx::GLBuffer     ebo_{gfx::BufferType::kElementArrayBuffer};
+    gfx::VertexArray  vao_{true};
+    gfx::GLBuffer     vbo_{gfx::BufferType::kArrayBuffer, true};
+    gfx::GLBuffer     ebo_{gfx::BufferType::kElementArrayBuffer, true};
     gfx::ShaderHandle shader_id_;
     std::vector<std::shared_ptr<gfx::rtypes::TextureBinding>> textures_;
 
