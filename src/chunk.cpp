@@ -13,6 +13,10 @@ ChunkRenderable::ChunkRenderable(gfx::ShaderHandle shaderId)
     : shader_id_{shaderId},
       vertex_data_{std::make_unique<std::vector<float>>()} {}
 
+ChunkRenderable::~ChunkRenderable() {
+    std::cout << "Chunk renderable destructor called, vao_ " << vao_.id()
+              << "\n";
+}
 gfx::ShaderHandle ChunkRenderable::GetShaderProgId() const {
     return shader_id_;
 }
@@ -54,7 +58,7 @@ void ChunkRenderable::Upload() {
     vbo_.UnBind();
     vao_.UnBind();
     std::cout << "Chunk Renderale uploaded " << vertex_data_->size()
-              << " values vao_: " << vao_.id() << "\n";
+              << " values; vao_: " << vao_.id() << "\n";
 }
 void ChunkRenderable::Draw() {
     vao_.Bind();
