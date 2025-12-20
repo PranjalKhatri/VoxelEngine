@@ -6,15 +6,18 @@
 
 #include "engine.hpp"
 #include "gl_types.hpp"
+#include "glm/fwd.hpp"
 #include "popglfw.hpp"
 #include "shader.hpp"
 #include "stb_image.h"
 #include "camera.hpp"
 #include "cube_renderable.hpp"
 #include "chunk.hpp"
+#include "chunk_system.hpp"
 
 #include <iostream>
 #include <memory>
+#include <thread>
 
 using namespace pop;
 using namespace pop::gfx;
@@ -46,10 +49,14 @@ int main() {
     glfwSetErrorCallback([](int code, const char* desc) {
         std::cerr << "GLFW Error [" << code << "]: " << desc << std::endl;
     });
-    glm::mat4 projection =
-        glm::perspective(glm::radians(45.0f),
-                         (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    Engine engine{projection, window};
+    float fov    = glm::radians(45.0f);
+    float aspect = 1920.0f / 1080.0f;
+    float near   = 0.1f;
+
+    // Tweaked infinite perspective handles the math for a "far plane" at
+    // infinity
+    glm::mat4 projection = glm::tweakedInfinitePerspective(fov, aspect, near);
+    Engine    engine{projection, window};
 
     auto cam = std::make_shared<FlyCam>(glm::vec3{0, 0, 3}, glm::vec3{0, 0, 0},
                                         glm::vec3{0, 1, 0});
@@ -59,8 +66,8 @@ int main() {
     std::unique_ptr<ShaderProgram> cubeShader =
         std::make_unique<ShaderProgram>();
     {
-        Shader vertex{ShaderType::Vertex};
-        Shader fragment{ShaderType::Fragment};
+        Shader vertex{ShaderStage::Vertex};
+        Shader fragment{ShaderStage::Fragment};
         Shader::LoadAndCompile(vertex, "assets/shaders/cube.vert");
         Shader::LoadAndCompile(fragment, "assets/shaders/cube.frag");
 
@@ -73,22 +80,34 @@ int main() {
         // cubeShader->SetUniformInt("tex2", 1);
     }
     std::cout << "Cube Shader constructed\n";
-    auto wood = std::make_shared<TextureBinding>(
-        TextureBinding{std::make_shared<Texture>(TextureType::kTexture2D), 0});
+
+    auto wood = std::make_shared<rtypes::TextureBinding>(rtypes::TextureBinding{
+        std::make_shared<Texture>(TextureType::kTexture2D), 0});
+
     wood->texture->LoadFromFile("assets/textures/wood.jpg", true);
-    auto chunk = std::make_shared<voxel::Chunk>();
+    /*
+    auto chunk = std::make_shared<voxel::Chunk>(glm::ivec3(0, 0, 0));
     chunk->SetShader(cubeShader->id());
     chunk->GenerateMesh();
     chunk->GetSolidRenderable()->AddTexture(wood);
-
-    // auto cube = std::make_shared<gfx::CubeRenderable>(
-    //     cubeShader->id(), "assets/textures/wood.jpg",
-    //     "assets/textures/face.png");
-    std::cout << "chunk shader set and constructed\n";
-    engine.AddShaderProgram(std::move(cubeShader));
     engine.AddRenderable(chunk->GetSolidRenderable());
+    */
+
+    /*
+    auto cube = std::make_shared<gfx::CubeRenderable>(
+        cubeShader->id(), "assets/textures/wood.jpg",
+        "assets/textures/face.png");
+    std::cout << "chunk shader set and constructed\n";
     // engine.AddRenderable(cube);
+    */
+    voxel::ChunkManager manager{cam.get()};
+    manager.SetShader(cubeShader->id());
+    manager.SetTexture(wood);
+    engine.AddShaderProgram(std::move(cubeShader));
+    std::thread chunkSystemThread{&voxel::ChunkManager::Run, &manager,
+                                  std::ref(engine)};
     engine.Run();
+    chunkSystemThread.join();
 
     // cleanup resources and terminate
     glfwTerminate();
