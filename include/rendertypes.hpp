@@ -3,10 +3,13 @@
 #include "texture.hpp"
 #include <cstdint>
 #include <memory>
-namespace pop::gfx {
+namespace pop::gfx::rtypes {
 
 struct TextureBinding {
     std::shared_ptr<Texture> texture;
     uint8_t                  slot;  // GL_TEXTURE0 + slot
 };
-}  // namespace pop::gfx
+
+enum class VoxelMaterial : uint8_t { kNothing, kLand, kWater, kNumShaderTypes };
+
+}  // namespace pop::gfx::rtypes
