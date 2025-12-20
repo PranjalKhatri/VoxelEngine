@@ -11,6 +11,12 @@ class GLBuffer {
     // If lazy then generate is called before any calls to Bind is made
     explicit GLBuffer(BufferType target, bool lazy = false);
     ~GLBuffer();
+
+    GLBuffer(const GLBuffer&)            = delete;
+    GLBuffer& operator=(const GLBuffer&) = delete;
+
+    GLBuffer(GLBuffer&&) noexcept;
+    GLBuffer& operator=(GLBuffer&&) noexcept;
     // Returns the buffer id
     GLuint id() const { return buffer_id_; }
     // Binds this buffer object to the specified target
@@ -38,6 +44,12 @@ class VertexArray {
    public:
     explicit VertexArray(bool lazy = false);
     ~VertexArray();
+
+    VertexArray(const VertexArray&)            = delete;
+    VertexArray& operator=(const VertexArray&) = delete;
+
+    VertexArray(VertexArray&&) noexcept;
+    VertexArray& operator=(VertexArray&&) noexcept;
     // Returns the Vertex array id
     GLuint id() const { return array_id_; }
     void   Generate();

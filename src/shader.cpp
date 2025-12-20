@@ -7,7 +7,7 @@
 namespace pop {
 namespace gfx {
 
-Shader::Shader(ShaderType stype)
+Shader::Shader(ShaderStage stype)
     : shader_type_{stype},
       shader_id_{glCreateShader(static_cast<ShaderHandle>(stype))},
       loaded_{false} {}
@@ -16,6 +16,33 @@ Shader::~Shader() {
     if (shader_id_) {
         glDeleteShader(shader_id_);
     }
+}
+Shader::Shader(Shader&& other) noexcept
+    : shader_type_(other.shader_type_),
+      shader_id_(other.shader_id_),
+      shader_source_(std::move(other.shader_source_)),
+      error_msg_(std::move(other.error_msg_)),
+      loaded_(other.loaded_) {
+    other.shader_id_ = 0;
+    other.loaded_    = false;
+}
+
+Shader& Shader::operator=(Shader&& other) noexcept {
+    if (this != &other) {
+        if (shader_id_ != 0) {
+            glDeleteShader(shader_id_);
+        }
+
+        shader_type_   = other.shader_type_;
+        shader_id_     = other.shader_id_;
+        shader_source_ = std::move(other.shader_source_);
+        error_msg_     = std::move(other.error_msg_);
+        loaded_        = other.loaded_;
+
+        other.shader_id_ = 0;
+        other.loaded_    = false;
+    }
+    return *this;
 }
 
 bool Shader::LoadShader(Shader& shader, std::string_view path) {
@@ -111,9 +138,27 @@ ShaderProgram::~ShaderProgram() {
         glDeleteProgram(program_id_);
     }
 }
+ShaderProgram::ShaderProgram(ShaderProgram&& other) noexcept
+    : program_id_(other.program_id_), error_msg_(std::move(other.error_msg_)) {
+    other.program_id_ = 0;
+}
+
+ShaderProgram& ShaderProgram::operator=(ShaderProgram&& other) noexcept {
+    if (this != &other) {
+        if (program_id_ != 0) {
+            glDeleteProgram(program_id_);
+        }
+
+        program_id_ = other.program_id_;
+        error_msg_  = std::move(other.error_msg_);
+
+        other.program_id_ = 0;
+    }
+    return *this;
+}
 
 void ShaderProgram::Attach(const Shader& shader) {
-    glAttachShader(program_id_, shader.id());
+    glAttachShader(program_id_, shader.GetHandle());
 }
 
 bool ShaderProgram::Link() {

@@ -12,6 +12,12 @@ class Shader {
     explicit Shader(ShaderStage stype);
     ~Shader();
 
+    Shader(const Shader&)            = delete;
+    Shader& operator=(const Shader&) = delete;
+
+    Shader(Shader&&) noexcept;
+    Shader& operator=(Shader&&) noexcept;
+
     // Loads shader source from file
     static bool LoadShader(Shader& shader, std::string_view path);
     // Helper which prints the error as well load and compiles the shader
@@ -44,6 +50,12 @@ class ShaderProgram {
    public:
     explicit ShaderProgram();
     ~ShaderProgram();
+
+    ShaderProgram(const ShaderProgram&)            = delete;
+    ShaderProgram& operator=(const ShaderProgram&) = delete;
+
+    ShaderProgram(ShaderProgram&&) noexcept;
+    ShaderProgram& operator=(ShaderProgram&&) noexcept;
     // Attatchs the shader to the program
     void Attach(const Shader& shader);
     // Link all the attatched shaders
