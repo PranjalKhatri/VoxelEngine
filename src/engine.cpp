@@ -11,10 +11,12 @@ Engine::Engine(glm::mat4 projectionMatrix, GLFWwindow *window)
     : is_running_{false},
       window_(window),
       projection_matrix_{projectionMatrix},
-      renderables_{} {
+      renderables_{},
+      cmd_queue_{} {
     glfwSetWindowUserPointer(window_, this);
     glfwSetCursorPosCallback(window_, MouseCallback);
     glfwSetFramebufferSizeCallback(window_, FramebufferSizeCallback);
+    is_running_ = true;
 }
 
 bool Engine::IsRunning() const { return is_running_; }
@@ -25,13 +27,36 @@ void Engine::AddShaderProgram(std::unique_ptr<gfx::ShaderProgram> shaderProg) {
     shader_prog_map_[shaderProg->id()] = std::move(shaderProg);
 }
 void Engine::AddRenderable(std::shared_ptr<Renderable> renderable) {
-    renderables_.emplace_back(std::move(renderable));
+    cmd_queue_.push({RenderCmdType::Add, std::move(renderable)});
+}
+void Engine::RemoveRenderable(std::shared_ptr<Renderable> renderable) {
+    cmd_queue_.push({RenderCmdType::Remove, std::move(renderable)});
 }
 void Engine::SetMainCamera(std::shared_ptr<gfx::Camera> cam) {
     main_camera_ = std::move(cam);
 }
+void Engine::ProcessCommands() {
+    // TODO: compare performance by limiting number of commands processed per
+    // turn
+    while (true) {
+        auto cmd = cmd_queue_.try_pop();
+        if (!cmd) break;
+        switch (cmd->type) {
+            case RenderCmdType::Add:
+                std::cout << "Added renderable\n";
+                cmd->renderable->Upload();
+                renderables_.insert(std::move(cmd->renderable));
+                break;
+            case RenderCmdType::Remove:
+                std::cout << "removed renderable\n";
+                renderables_.erase(std::move(cmd->renderable));
+                break;
+        }
+    }
+}
 
 void Engine::Run() {
+    std::cout << "Inside Run" << std::endl;
     if (!main_camera_) {
         throw std::runtime_error("No main Camera attatched to Engine!");
     }
@@ -39,11 +64,13 @@ void Engine::Run() {
         renderable->Upload();
     }
     for (auto &prog : shader_prog_map_) {
+        prog.second->use();
         prog.second->SetUniformMat4("projection", projection_matrix_, false);
     }
     std::cout << "Run init successful\n";
     while (!glfwWindowShouldClose(window_)) {
-        is_running_ = true;
+        ProcessCommands();
+
         UpdateDeltaTime();
         ProcessInput();
 

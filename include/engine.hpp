@@ -27,12 +27,13 @@ class Engine {
     Engine(const Engine&)            = delete;
     Engine& operator=(const Engine&) = delete;
 
-    // todo define move ctor
+    Engine(Engine&&)            = delete;
+    Engine& operator=(Engine&&) = delete;
 
     void SetMainCamera(std::shared_ptr<gfx::Camera> camera);
 
-    void AddRenderable(const RenderCmd& cmd);
-    void RemoveRenderable(const RenderCmd& cmd);
+    void AddRenderable(std::shared_ptr<Renderable> renderable);
+    void RemoveRenderable(std::shared_ptr<Renderable> renderable);
 
     // void AddRenderable(const std::shared_ptr<Renderable>& renderable);
     // void RemoveRenderable(const std::shared_ptr<Renderable>& renderable);
@@ -57,19 +58,19 @@ class Engine {
     void ProcessCommands();
 
    private:
-    float last_frame_time_;
-    float delta_time_;
-    bool  is_running_;
+    float last_frame_time_{};
+    float delta_time_{};
+    bool  is_running_{};
 
     CmdQueue<RenderCmd> cmd_queue_;
 
-    GLFWwindow* window_;
+    GLFWwindow* window_{};
 
-    std::unordered_set<std::shared_ptr<Renderable>> renderables_;
+    std::unordered_set<std::shared_ptr<Renderable>> renderables_{};
     std::unordered_map<gfx::ShaderHandle, std::unique_ptr<gfx::ShaderProgram>>
-                                 shader_prog_map_;
-    std::shared_ptr<gfx::Camera> main_camera_;
-    glm::mat4                    projection_matrix_;
+                                 shader_prog_map_{};
+    std::shared_ptr<gfx::Camera> main_camera_{};
+    glm::mat4                    projection_matrix_{};
 
     // gfx::ResourceManager resource_manager_;
 };
