@@ -22,6 +22,16 @@ add_custom_target(copy_assets ALL
 add_executable(VoxelEngine ${SRC_FILES})
 add_dependencies(VoxelEngine copy_assets)
 
+target_compile_options(VoxelEngine PRIVATE
+    -Wall
+    -Wextra
+    -Wpedantic
+    -Wshadow
+    -Wpointer-arith
+    -Wcast-qual
+    -Wwrite-strings
+)
+
 # ---- External libraries ----
 
 # glad
@@ -32,10 +42,12 @@ target_include_directories(glad PUBLIC external/glad/include)
 add_library(stb_image STATIC external/stb_image/stb_image.cpp)
 target_include_directories(stb_image PUBLIC external/stb_image)
 
+
 target_include_directories(VoxelEngine PRIVATE
     include
     external/glm
     external/glfw/include
+    external/fast_noise_lite
 )
 
 # Prebuilt libs (GLFW)
