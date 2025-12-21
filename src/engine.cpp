@@ -9,10 +9,10 @@
 namespace pop {
 Engine::Engine(glm::mat4 projectionMatrix, GLFWwindow *window)
     : is_running_{false},
+      cmd_queue_{},
       window_(window),
-      projection_matrix_{projectionMatrix},
       renderables_{},
-      cmd_queue_{} {
+      projection_matrix_{projectionMatrix} {
     glfwSetWindowUserPointer(window_, this);
     glfwSetCursorPosCallback(window_, MouseCallback);
     glfwSetFramebufferSizeCallback(window_, FramebufferSizeCallback);
@@ -87,18 +87,18 @@ void Engine::Render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     auto viewMatrix = main_camera_->GetViewMatrix();
     for (auto &drawable : renderables_) {
-        auto current_shader_ = drawable->GetShaderProgId();
-        if (current_shader_) {
-            if (!shader_prog_map_[current_shader_])
+        auto current_shader_id = drawable->GetShaderProgId();
+        if (current_shader_id) {
+            if (!shader_prog_map_[current_shader_id])
                 throw std::runtime_error("Shader Program doesn't exist");
-            shader_prog_map_[current_shader_]->use();
-            shader_prog_map_[current_shader_]->SetUniformMat4(
+            shader_prog_map_[current_shader_id]->use();
+            shader_prog_map_[current_shader_id]->SetUniformMat4(
                 "view", viewMatrix, false);
         } else {
             std::cout << "No shader bounded\n";
             glUseProgram(0);
         }
-        drawable->Draw();
+        drawable->Draw(shader_prog_map_[current_shader_id].get());
     }
 }
 
