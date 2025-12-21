@@ -19,7 +19,7 @@ TextureFormat GetFormatFromChannels(int ch) {
     }
 }
 Texture::Texture(TextureType type)
-    : tex_type_{type}, data_{nullptr}, width_{0}, height_{0}, nchannels_{0} {
+    : width_{0}, height_{0}, nchannels_{0}, data_{nullptr}, tex_type_{type} {
     glGenTextures(1, &tex_id_);
     glBindTexture(static_cast<GLenum>(tex_type_), tex_id_);
 
@@ -84,8 +84,7 @@ bool Texture::LoadFromFile(std::string_view path, bool flip_vertically) {
     stbi_set_flip_vertically_on_load(flip_vertically);
 
     // Only 2D files can be loaded from disk (1D/3D must be procedural)
-    int comp = 0;
-    data_    = stbi_load(path.data(), &width_, &height_, &nchannels_, 0);
+    data_ = stbi_load(path.data(), &width_, &height_, &nchannels_, 0);
 
     if (!data_) {
         std::cerr << "Unable to load data from file: " << path << "\n";
