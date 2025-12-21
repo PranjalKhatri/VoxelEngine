@@ -51,13 +51,13 @@ void GLBuffer::BufferData(GLsizeiptr size, const void* data, GLenum usage) {
 VertexArray::VertexArray(bool lazy) {
     if (!lazy) {
         glGenVertexArrays(1, &array_id_);
-        std::cout << "Vertex array created with id " << array_id_ << "\n";
+        // std::cout << "Vertex array created with id " << array_id_ << "\n";
     }
 }
 
 void VertexArray::Generate() {
     if (!array_id_) glGenVertexArrays(1, &array_id_);
-    std::cout << "Vertex Array created with id " << array_id_ << "\n";
+    // std::cout << "Vertex Array created with id " << array_id_ << "\n";
 }
 
 VertexArray::~VertexArray() {
