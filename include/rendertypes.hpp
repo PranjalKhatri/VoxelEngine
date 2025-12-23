@@ -10,6 +10,4 @@ struct TextureBinding {
     uint8_t                  slot;  // GL_TEXTURE0 + slot
 };
 
-enum class VoxelMaterial : uint8_t { kNothing, kLand, kWater, kNumShaderTypes };
-
 }  // namespace pop::gfx::rtypes
