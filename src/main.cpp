@@ -11,8 +11,6 @@
 #include "shader.hpp"
 #include "stb_image.h"
 #include "camera.hpp"
-#include "cube_renderable.hpp"
-#include "chunk.hpp"
 #include "chunk_system.hpp"
 
 #include <iostream>
@@ -24,9 +22,6 @@ using namespace pop::gfx;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-
-const unsigned int SCR_WIDTH  = 800;
-const unsigned int SCR_HEIGHT = 600;
 
 int main() {
     // init
@@ -81,10 +76,12 @@ int main() {
     }
     std::cout << "Cube Shader constructed\n";
 
-    auto wood = std::make_shared<rtypes::TextureBinding>(rtypes::TextureBinding{
-        std::make_shared<Texture>(TextureType::kTexture2D), 0});
+    auto textureAtlas =
+        std::make_shared<rtypes::TextureBinding>(rtypes::TextureBinding{
+            std::make_shared<Texture>(TextureType::kTexture2D), 0});
 
-    wood->texture->LoadFromFile("assets/textures/wood.jpg", true);
+    textureAtlas->texture->LoadFromFile("assets/textures/VoxelTextures.png",
+                                        true);
     /*
     auto chunk = std::make_shared<voxel::Chunk>(glm::ivec3(0, 0, 0));
     chunk->SetShader(cubeShader->id());
@@ -102,7 +99,7 @@ int main() {
     */
     voxel::ChunkManager manager{cam.get()};
     manager.SetShader(cubeShader->id());
-    manager.SetTexture(wood);
+    manager.SetTexture(textureAtlas);
     engine.AddShaderProgram(std::move(cubeShader));
     std::thread chunkSystemThread{&voxel::ChunkManager::Run, &manager,
                                   std::ref(engine)};
