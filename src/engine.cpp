@@ -66,6 +66,15 @@ void Engine::Run() {
     for (auto &prog : shader_prog_map_) {
         prog.second->use();
         prog.second->SetUniformMat4("projection", projection_matrix_, false);
+        // Direction: x=-0.2 (slightly from left), y=-1.0 (mostly down), z=-0.3
+        // (slightly from front)
+        prog.second->SetUniformFloat3("SunLight.direction", -0.2f, -1.0f,
+                                      -0.3f);
+        // Ambient: The base light in the shadows (soft blueish gray to simulate
+        // sky reflection)
+        prog.second->SetUniformFloat3("SunLight.ambient", 0.3f, 0.3f, 0.35f);
+        // Diffuse: The direct sun color (slightly warm/yellowish)
+        prog.second->SetUniformFloat3("SunLight.diffuse", 0.8f, 0.8f, 0.7f);
     }
     std::cout << "Run init successful\n";
     while (!glfwWindowShouldClose(window_)) {
@@ -83,7 +92,7 @@ void Engine::Run() {
 }
 
 void Engine::Render() {
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     auto viewMatrix = main_camera_->GetViewMatrix();
     for (auto &drawable : renderables_) {
