@@ -44,7 +44,7 @@ class ChunkManager {
     void SetShader(gfx::ShaderHandle handle);
     void SetTexture(std::shared_ptr<gfx::rtypes::TextureBinding> texture);
 
-    static constexpr int RenderDistance = 2;
+    static constexpr int RenderDistance = 16;
 
    private:
     void LoadChunk(const ChunkCoord& coord, Engine& engine);
