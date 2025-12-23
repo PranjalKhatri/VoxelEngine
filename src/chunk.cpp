@@ -62,7 +62,7 @@ void ChunkRenderable::Upload() {
     vao_.UnBind();
     // std::cout << "Chunk Renderale uploaded " << vertex_data_->size()
     //           << " values; vao_: " << vao_.id() << "\n";
-    num_triangles_ = vertex_data_->size() / 5.0;
+    num_triangles_ = vertex_data_->size() / 6.0;
     // vertex_data_->clear();  // free heap memmory after sending it to gpu
 }
 void ChunkRenderable::Draw(gfx::ShaderProgram *const shader_program) {
@@ -87,6 +87,24 @@ Voxel::Type Voxel::GetType() const { return type_; }
 
 void Voxel::SetType(Voxel::Type vtype) { type_ = vtype; }
 
+constexpr int VoxelTypeToTexture(const Voxel::Type &voxelType) {
+    switch (voxelType) {
+        case Voxel::Type::kGrass:
+            return 3;
+        case Voxel::Type::kDirt:
+            return 2;
+        case Voxel::Type::kStone:
+            return 6;
+        case Voxel::Type::kSand:
+            return 5;
+        case Voxel::Type::kTreeBark:
+            return 4;
+        case Voxel::Type::kTreeLeaves:
+            return 1;
+        default:
+            return 100;
+    }
+}
 //==============FaceGeometry==============
 constexpr const float *FaceGeometry::GetFace(pop::direction faceDirection) {
     return kFaceTable[static_cast<int>(faceDirection)];
@@ -142,10 +160,14 @@ void Chunk::GenerateRenderable() {
             }
         }
     }
+    int stride = sizeof(float) * 7;
+    solid_mesh_->AddAttribute({0, 3, gfx::GLType::kFloat, false, stride, 0});
     solid_mesh_->AddAttribute(
-        {0, 3, gfx::GLType::kFloat, false, 5 * sizeof(float), 0});
-    solid_mesh_->AddAttribute({1, 2, gfx::GLType::kFloat, false,
-                               5 * sizeof(float), 3 * sizeof(float)});
+        {1, 2, gfx::GLType::kFloat, false, stride, 3 * sizeof(float)});
+    solid_mesh_->AddAttribute(
+        {2, 1, gfx::GLType::kFloat, false, stride, 5 * sizeof(float)});
+    solid_mesh_->AddAttribute(
+        {3, 1, gfx::GLType::kFloat, false, stride, 6 * sizeof(float)});
     solid_mesh_->SetChunkOffset(chunk_offset_);
 }
 void Chunk::GenerateVoxel(int x, int y, int z) {
@@ -164,6 +186,9 @@ void Chunk::GenerateVoxel(int x, int y, int z) {
             verts.push_back(face[i + 2] + z);  // pz
             verts.push_back(face[i + 3]);      // u
             verts.push_back(face[i + 4]);      // v
+            verts.push_back(kNormalTable[static_cast<int>(dir)]);
+            verts.push_back(
+                VoxelTypeToTexture(voxel_data_[Index(x, y, z)].GetType()));
         }
     };
     if (!IsSolid(x, y + 1, z)) emit_face(direction::kTop);
