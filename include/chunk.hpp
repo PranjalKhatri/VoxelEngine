@@ -15,7 +15,16 @@ namespace pop::voxel {
 
 class Voxel {
    public:
-    enum class Type : uint8_t { kAir, kGrass, kDirt, kWater, kStone };
+    enum class Type : uint8_t {
+        kAir,
+        kGrass,
+        kDirt,
+        kStone,
+        kSand,
+        kTreeBark,
+        kTreeLeaves,
+        kWater
+    };
 
     Voxel(Type type = Type::kAir);
 
@@ -139,4 +148,5 @@ static constexpr const float*
     kFaceTable[static_cast<size_t>(direction::kCount)] = {
         kTopFace, kBottomFace, kNorthFace, kSouthFace, kWestFace, kEastFace,
 };
+static constexpr const float kNormalTable[] = {0, 1, 2, 3, 4, 5};
 };  // namespace pop::voxel
