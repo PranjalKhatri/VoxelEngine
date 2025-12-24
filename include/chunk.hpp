@@ -8,6 +8,7 @@
 #include "rendertypes.hpp"
 #include "shader.hpp"
 #include "vertex_buffers.hpp"
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -36,6 +37,12 @@ class Voxel {
    private:
     Type type_;
 };
+
+static constexpr int    VoxelTypeToTexture(const Voxel::Type& voxelType);
+static constexpr size_t MeshToIndex(gfx::rtypes::MeshType type) {
+    return static_cast<size_t>(type);
+}
+
 struct FaceGeometry {
     static constexpr int kStride      = 5;
     static constexpr int kVertexCount = 6;
@@ -44,12 +51,13 @@ struct FaceGeometry {
 };
 class ChunkRenderable : public Renderable {
    public:
-    ChunkRenderable(gfx::ShaderHandle shaderId);
+    ChunkRenderable(gfx::ShaderHandle shaderId, bool isTransparent = false);
     ~ChunkRenderable();
 
     void              Upload() override;
     void              Draw(gfx::ShaderProgram* const shader_program) override;
     gfx::ShaderHandle GetShaderProgId() const override;
+    bool              IsTransparent() const { return is_transparent_; }
 
     void AddTexture(std::shared_ptr<gfx::rtypes::TextureBinding> texture);
     void AddAttribute(const gfx::Attribute& attribute);
@@ -58,6 +66,7 @@ class ChunkRenderable : public Renderable {
     std::vector<float>& VertexData() { return *vertex_data_; }
 
    private:
+    bool              is_transparent_;
     gfx::VertexArray  vao_{true};
     gfx::GLBuffer     vbo_{gfx::BufferType::kArrayBuffer, true};
     gfx::GLBuffer     ebo_{gfx::BufferType::kElementArrayBuffer, true};
@@ -77,30 +86,37 @@ class Chunk {
     constexpr static int kBaseHeight     = 20;
     constexpr static int kVariableHeight = 20;
     constexpr static int kSize_y         = kBaseHeight + kVariableHeight;
+    constexpr static int kWaterBaseline  = kBaseHeight - 5;
     constexpr static int kSize_z         = 16;
+    constexpr static int kNumMeshes =
+        static_cast<int>(gfx::rtypes::MeshType::kMeshCount);
 
     Chunk(glm::ivec3 chunkOffset);
-    ~Chunk();
+    ~Chunk() = default;
 
     void GenerateMesh();
-    void SetShader(gfx::ShaderHandle id);
+    void SetShader(gfx::rtypes::MeshType shaderMeshType,
+                   gfx::ShaderHandle     shaderHandle);
 
-    static int Index(int x, int y, int z);
+    constexpr static int Index(int x, int y, int z);
 
-    std::shared_ptr<ChunkRenderable> GetSolidRenderable() const;
+    std::shared_ptr<ChunkRenderable> GetRenderable(
+        gfx::rtypes::MeshType mtype) const;
 
    private:
-    void GenerateVoxel(int x, int y, int z);
+    void GenerateVoxel(int x, int y, int z,
+                       const std::shared_ptr<ChunkRenderable>& mesh);
     void GenerateRenderable();
     void PopulateFromHeightMap();
     bool IsSolid(int x, int y, int z) const;
 
    private:
-    glm::ivec3 chunk_offset_;
+    glm::ivec3 chunk_offset_{};
 
-    gfx::ShaderHandle                solid_shader_id_;
-    std::unique_ptr<Voxel[]>         voxel_data_;
-    std::shared_ptr<ChunkRenderable> solid_mesh_;
+    std::unique_ptr<Voxel[]> voxel_data_{};
+
+    std::array<gfx::ShaderHandle, kNumMeshes>                shader_ids_{};
+    std::array<std::shared_ptr<ChunkRenderable>, kNumMeshes> meshes_{};
 };
 // 6 vertices * (3 pos + 2 uv) = 30 floats per face
 static constexpr float kTopFace[] = {
