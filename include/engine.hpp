@@ -66,7 +66,8 @@ class Engine {
 
     GLFWwindow* window_{};
 
-    std::unordered_set<std::shared_ptr<Renderable>> renderables_{};
+    std::unordered_set<std::shared_ptr<Renderable>> solid_renderables_{},
+        transparent_renderables_;
     std::unordered_map<gfx::ShaderHandle, std::unique_ptr<gfx::ShaderProgram>>
                                  shader_prog_map_{};
     std::shared_ptr<gfx::Camera> main_camera_{};

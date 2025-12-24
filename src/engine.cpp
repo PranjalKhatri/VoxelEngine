@@ -12,7 +12,7 @@ Engine::Engine(glm::mat4 projectionMatrix, GLFWwindow *window)
     : is_running_{false},
       cmd_queue_{},
       window_(window),
-      renderables_{},
+      solid_renderables_{},
       projection_matrix_{projectionMatrix} {
     glfwSetWindowUserPointer(window_, this);
     glfwSetCursorPosCallback(window_, MouseCallback);
@@ -46,11 +46,17 @@ void Engine::ProcessCommands() {
             case RenderCmdType::Add:
                 std::cout << "Added renderable\n";
                 cmd->renderable->Upload();
-                renderables_.insert(std::move(cmd->renderable));
+                if (cmd->renderable->IsTransparent())
+                    transparent_renderables_.insert(std::move(cmd->renderable));
+                else
+                    solid_renderables_.insert(std::move(cmd->renderable));
                 break;
             case RenderCmdType::Remove:
                 std::cout << "removed renderable\n";
-                renderables_.erase(std::move(cmd->renderable));
+                if (cmd->renderable->IsTransparent())
+                    transparent_renderables_.erase(std::move(cmd->renderable));
+                else
+                    solid_renderables_.erase(std::move(cmd->renderable));
                 break;
         }
     }
@@ -61,7 +67,7 @@ void Engine::Run() {
     if (!main_camera_) {
         throw std::runtime_error("No main Camera attatched to Engine!");
     }
-    for (auto &renderable : renderables_) {
+    for (auto &renderable : solid_renderables_) {
         renderable->Upload();
     }
     for (auto &prog : shader_prog_map_) {
@@ -95,26 +101,38 @@ void Engine::Render() {
     glClearColor(0.53f, 0.81f, 0.92f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     auto viewMatrix = main_camera_->GetViewMatrix();
-    for (auto &drawable : renderables_) {
+
+    // PASS 1: SOLID RENDERABLES
+    glDisable(GL_BLEND);
+    glDepthMask(GL_TRUE);
+    for (auto &drawable : solid_renderables_) {
         auto current_shader_id = drawable->GetShaderProgId();
-        if (current_shader_id) {
-            if (!shader_prog_map_[current_shader_id])
-                throw std::runtime_error("Shader Program doesn't exist");
+        if (current_shader_id && shader_prog_map_[current_shader_id]) {
             shader_prog_map_[current_shader_id]->use();
             shader_prog_map_[current_shader_id]->SetUniformMat4(
                 "view", viewMatrix, false);
-        } else {
-            std::cout << "No shader bounded\n";
-            glUseProgram(0);
+
+            drawable->Draw(shader_prog_map_[current_shader_id].get());
         }
-
-        drawable->Draw(shader_prog_map_[current_shader_id].get());
-
-        // if (drawable->IsTransparent()) {
-        //     glDepthMask(GL_TRUE);
-        //     glDisable(GL_BLEND);
-        // }
     }
+    // PASS 2: TRANSPARENT RENDERABLES (WATER)
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+
+    for (auto &drawable : transparent_renderables_) {
+        auto current_shader_id = drawable->GetShaderProgId();
+        if (current_shader_id && shader_prog_map_[current_shader_id]) {
+            shader_prog_map_[current_shader_id]->use();
+            shader_prog_map_[current_shader_id]->SetUniformMat4(
+                "view", viewMatrix, false);
+
+            drawable->Draw(shader_prog_map_[current_shader_id].get());
+        }
+    }
+
+    glDepthMask(GL_TRUE);
+    glDisable(GL_BLEND);
 }
 
 void Engine::FramebufferSizeCallback(GLFWwindow *window, int width,
