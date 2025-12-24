@@ -12,8 +12,9 @@
 namespace pop::voxel {
 
 // ===============Chunk Renderable==============
-ChunkRenderable::ChunkRenderable(gfx::ShaderHandle shaderId)
-    : shader_id_{shaderId},
+ChunkRenderable::ChunkRenderable(gfx::ShaderHandle shaderId, bool isTransparent)
+    : is_transparent_(isTransparent),
+      shader_id_{shaderId},
       vertex_data_{std::make_unique<std::vector<float>>()} {}
 
 ChunkRenderable::~ChunkRenderable() {
@@ -62,7 +63,7 @@ void ChunkRenderable::Upload() {
     vao_.UnBind();
     // std::cout << "Chunk Renderale uploaded " << vertex_data_->size()
     //           << " values; vao_: " << vao_.id() << "\n";
-    num_triangles_ = vertex_data_->size() / 6.0;
+    num_triangles_ = vertex_data_->size() / 7.0;
     // vertex_data_->clear();  // free heap memmory after sending it to gpu
 }
 void ChunkRenderable::Draw(gfx::ShaderProgram *const shader_program) {
@@ -90,19 +91,19 @@ void Voxel::SetType(Voxel::Type vtype) { type_ = vtype; }
 constexpr int VoxelTypeToTexture(const Voxel::Type &voxelType) {
     switch (voxelType) {
         case Voxel::Type::kGrass:
-            return 3;
-        case Voxel::Type::kDirt:
             return 2;
-        case Voxel::Type::kStone:
-            return 6;
-        case Voxel::Type::kSand:
-            return 5;
-        case Voxel::Type::kTreeBark:
-            return 4;
-        case Voxel::Type::kTreeLeaves:
+        case Voxel::Type::kDirt:
             return 1;
+        case Voxel::Type::kStone:
+            return 5;
+        case Voxel::Type::kSand:
+            return 4;
+        case Voxel::Type::kTreeBark:
+            return 3;
+        case Voxel::Type::kTreeLeaves:
+            return 0;
         default:
-            return 100;
+            return 0;
     }
 }
 //==============FaceGeometry==============
@@ -111,26 +112,28 @@ constexpr const float *FaceGeometry::GetFace(pop::direction faceDirection) {
 }
 // ==============CHUNK===============
 Chunk::Chunk(glm::ivec3 chunkOffset)
-    : chunk_offset_(chunkOffset), voxel_data_{}, solid_mesh_{} {
-    // std::cout << "Chunk created with offset : " << chunkOffset.x << " "
-    //           << chunkOffset.y << " " << chunkOffset.z << "\n";
-}
-Chunk::~Chunk() {}
-int Chunk::Index(int x, int y, int z) {
+    : chunk_offset_(chunkOffset), voxel_data_{} {}
+constexpr int Chunk::Index(int x, int y, int z) {
     return x + kSize_x * (y + kSize_y * z);
 }
 
-void Chunk::SetShader(gfx::ShaderHandle id) { solid_shader_id_ = id; }
-std::shared_ptr<ChunkRenderable> Chunk::GetSolidRenderable() const {
-    if (!solid_mesh_) {
-        std::cout << "Call to GetSolidRenderable made without construction!\n";
-    }
-    return solid_mesh_;
+void Chunk::SetShader(gfx::rtypes::MeshType shaderMeshType,
+                      gfx::ShaderHandle     shaderHandle) {
+    const size_t index = MeshToIndex(shaderMeshType);
+    shader_ids_[index] = shaderHandle;
+}
+std::shared_ptr<ChunkRenderable> Chunk::GetRenderable(
+    gfx::rtypes::MeshType mtype) const {
+    const size_t index = MeshToIndex(mtype);
+    return meshes_[index];
 }
 
 void Chunk::GenerateMesh() {
     voxel_data_ = std::make_unique<Voxel[]>(kSize_x * kSize_y * kSize_z);
-    solid_mesh_ = std::make_shared<ChunkRenderable>(solid_shader_id_);
+    for (int i = 0; i < kNumMeshes; i++)
+        meshes_[i] = std::make_shared<ChunkRenderable>(
+            shader_ids_[i],
+            gfx::rtypes::IsSolidMesh(static_cast<gfx::rtypes::MeshType>(i)));
 
     PopulateFromHeightMap();
     GenerateRenderable();
@@ -142,9 +145,16 @@ void Chunk::PopulateFromHeightMap() {
                 terrain::TerrainGenerator::GetInstance().GetHeight(
                     chunk_offset_.x + x, chunk_offset_.z + z);
             int cellHeight = kBaseHeight + variableMultiplier * kVariableHeight;
-            for (int y = 0; y < cellHeight; y++) {
+            int y{};
+            for (; y < cellHeight; y++) {
                 auto index = Index(x, y, z);
-                voxel_data_[index].SetType(Voxel::Type::kStone);
+                auto vType = Voxel::Type::kStone;
+                voxel_data_[index].SetType(vType);
+            }
+            for (; y < kWaterBaseline; y++) {
+                auto index = Index(x, y, z);
+                auto vType = Voxel::Type::kWater;
+                voxel_data_[index].SetType(vType);
             }
         }
     }
@@ -155,28 +165,38 @@ void Chunk::GenerateRenderable() {
         for (int y = 0; y < kSize_y; y++) {
             for (int z = 0; z < kSize_z; z++) {
                 auto index = Index(x, y, z);
-                if (voxel_data_[index].GetType() == Voxel::Type::kAir) continue;
-                GenerateVoxel(x, y, z);
+                auto vtype = voxel_data_[index].GetType();
+                if (vtype == Voxel::Type::kAir) continue;
+                if (vtype == Voxel::Type::kWater)
+                    GenerateVoxel(x, y, z,
+                                  meshes_[MeshToIndex(
+                                      gfx::rtypes::MeshType::kWaterMesh)]);
+                else
+                    GenerateVoxel(x, y, z,
+                                  meshes_[MeshToIndex(
+                                      gfx::rtypes::MeshType::kSolidMesh)]);
             }
         }
     }
     int stride = sizeof(float) * 7;
-    solid_mesh_->AddAttribute({0, 3, gfx::GLType::kFloat, false, stride, 0});
-    solid_mesh_->AddAttribute(
-        {1, 2, gfx::GLType::kFloat, false, stride, 3 * sizeof(float)});
-    solid_mesh_->AddAttribute(
-        {2, 1, gfx::GLType::kFloat, false, stride, 5 * sizeof(float)});
-    solid_mesh_->AddAttribute(
-        {3, 1, gfx::GLType::kFloat, false, stride, 6 * sizeof(float)});
-    solid_mesh_->SetChunkOffset(chunk_offset_);
+    for (auto &mesh : meshes_) {
+        if (!mesh) continue;
+        mesh->AddAttribute({0, 3, gfx::GLType::kFloat, false, stride, 0});
+        mesh->AddAttribute(
+            {1, 2, gfx::GLType::kFloat, false, stride, 3 * sizeof(float)});
+        mesh->AddAttribute(
+            {2, 1, gfx::GLType::kFloat, false, stride, 5 * sizeof(float)});
+        mesh->AddAttribute(
+            {3, 1, gfx::GLType::kFloat, false, stride, 6 * sizeof(float)});
+        mesh->SetChunkOffset(chunk_offset_);
+    }
 }
-void Chunk::GenerateVoxel(int x, int y, int z) {
-    // For each vertex of the cube
-    // vertices[] = { px, py, pz, u, v, ... }
+void Chunk::GenerateVoxel(int x, int y, int z,
+                          const std::shared_ptr<ChunkRenderable> &mesh) {
     constexpr int floats_per_vertex = 5;
     constexpr int floats_per_face   = floats_per_vertex * 6;
 
-    auto &verts     = solid_mesh_->VertexData();
+    auto &verts     = mesh->VertexData();
     auto  emit_face = [&](direction dir) {
         const float *face = FaceGeometry::GetFace(dir);
 
