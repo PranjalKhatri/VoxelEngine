@@ -1,3 +1,4 @@
+#include "glad/glad.h"
 #include "engine.hpp"
 #include "camera.hpp"
 #include "glm/fwd.hpp"
@@ -68,8 +69,7 @@ void Engine::Run() {
         prog.second->SetUniformMat4("projection", projection_matrix_, false);
         // Direction: x=-0.2 (slightly from left), y=-1.0 (mostly down), z=-0.3
         // (slightly from front)
-        prog.second->SetUniformFloat3("SunLight.direction", -0.2f, -1.0f,
-                                      -0.3f);
+        prog.second->SetUniformFloat3("SunLight.direction", 0.0f, -1.0f, 0.0f);
         // Ambient: The base light in the shadows (soft blueish gray to simulate
         // sky reflection)
         prog.second->SetUniformFloat3("SunLight.ambient", 0.3f, 0.3f, 0.35f);
@@ -107,7 +107,13 @@ void Engine::Render() {
             std::cout << "No shader bounded\n";
             glUseProgram(0);
         }
+
         drawable->Draw(shader_prog_map_[current_shader_id].get());
+
+        // if (drawable->IsTransparent()) {
+        //     glDepthMask(GL_TRUE);
+        //     glDisable(GL_BLEND);
+        // }
     }
 }
 
