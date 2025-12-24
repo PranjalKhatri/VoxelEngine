@@ -132,8 +132,8 @@ void Chunk::GenerateMesh() {
     voxel_data_ = std::make_unique<Voxel[]>(kSize_x * kSize_y * kSize_z);
     for (int i = 0; i < kNumMeshes; i++)
         meshes_[i] = std::make_shared<ChunkRenderable>(
-            shader_ids_[i],
-            gfx::rtypes::IsSolidMesh(static_cast<gfx::rtypes::MeshType>(i)));
+            shader_ids_[i], gfx::rtypes::IsTransparentMesh(
+                                static_cast<gfx::rtypes::MeshType>(i)));
 
     PopulateFromHeightMap();
     GenerateRenderable();
