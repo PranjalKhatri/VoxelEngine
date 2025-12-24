@@ -4,6 +4,7 @@
 #include <mutex>
 #include <optional>
 
+namespace pop::util {
 // Thread Safe Non blocking queue
 template <typename T>
 class CmdQueue {
@@ -35,3 +36,4 @@ class CmdQueue {
         return m_queue.empty();
     }
 };
+}  // namespace pop::util

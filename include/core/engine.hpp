@@ -62,7 +62,7 @@ class Engine {
     float delta_time_{};
     bool  is_running_{};
 
-    CmdQueue<RenderCmd> cmd_queue_;
+    util::CmdQueue<RenderCmd> cmd_queue_;
 
     GLFWwindow* window_{};
 
