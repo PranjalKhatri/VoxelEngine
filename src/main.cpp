@@ -8,6 +8,7 @@
 #include "gl_types.hpp"
 #include "glm/fwd.hpp"
 #include "popglfw.hpp"
+#include "rendertypes.hpp"
 #include "shader.hpp"
 #include "stb_image.h"
 #include "camera.hpp"
@@ -39,11 +40,11 @@ int main() {
     }
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glEnable(GL_DEPTH_TEST);
 
     glfwSetErrorCallback([](int code, const char* desc) {
         std::cerr << "GLFW Error [" << code << "]: " << desc << std::endl;
     });
+    glEnable(GL_DEPTH_TEST);
     float fov    = glm::radians(45.0f);
     float aspect = 1920.0f / 1080.0f;
     float near   = 0.1f;
@@ -53,35 +54,43 @@ int main() {
     glm::mat4 projection = glm::tweakedInfinitePerspective(fov, aspect, near);
     Engine    engine{projection, window};
 
-    auto cam = std::make_shared<FlyCam>(glm::vec3{0, 0, 3}, glm::vec3{0, 0, 0},
-                                        glm::vec3{0, 1, 0});
+    auto cam = std::make_shared<FlyCam>(glm::vec3{0, voxel::Chunk::kSize_y, 3},
+                                        glm::vec3{0, 0, 0}, glm::vec3{0, 1, 0});
     engine.SetMainCamera(cam);
     std::cout << "Engine initialization done!\n";
     // // Shader
-    std::unique_ptr<ShaderProgram> cubeShader =
-        std::make_unique<ShaderProgram>();
+    auto VoxelShader = std::make_unique<ShaderProgram>();
+    auto WaterShader = std::make_unique<ShaderProgram>();
+
     {
         Shader vertex{ShaderStage::Vertex};
         Shader fragment{ShaderStage::Fragment};
+        Shader waterFrag{ShaderStage::Fragment};
         Shader::LoadAndCompile(vertex, "assets/shaders/cube.vert");
         Shader::LoadAndCompile(fragment, "assets/shaders/cube.frag");
+        Shader::LoadAndCompile(waterFrag, "assets/shaders/water.frag");
 
-        cubeShader->Attach(vertex);
-        cubeShader->Attach(fragment);
-        cubeShader->Link();
+        VoxelShader->Attach(vertex);
+        VoxelShader->Attach(fragment);
+        VoxelShader->Link();
 
-        cubeShader->use();
-        cubeShader->SetUniformInt("tex1", 0);
+        WaterShader->Attach(vertex);
+        WaterShader->Attach(waterFrag);
+        WaterShader->Link();
+
+        VoxelShader->use();
+        VoxelShader->SetUniformInt("tex1", 0);
+        WaterShader->use();
+        WaterShader->SetUniformInt("tex1", 0);
         // cubeShader->SetUniformInt("tex2", 1);
     }
-    std::cout << "Cube Shader constructed\n";
 
     auto textureAtlas =
         std::make_shared<rtypes::TextureBinding>(rtypes::TextureBinding{
             std::make_shared<Texture>(TextureType::kTexture2D), 0});
 
     textureAtlas->texture->LoadFromFile("assets/textures/VoxelTextures.png",
-                                        true);
+                                        false);
     /*
     auto chunk = std::make_shared<voxel::Chunk>(glm::ivec3(0, 0, 0));
     chunk->SetShader(cubeShader->id());
@@ -98,9 +107,11 @@ int main() {
     // engine.AddRenderable(cube);
     */
     voxel::ChunkManager manager{cam.get()};
-    manager.SetShader(cubeShader->id());
+    manager.SetShader(gfx::rtypes::MeshType::kSolidMesh, VoxelShader->id());
+    manager.SetShader(gfx::rtypes::MeshType::kWaterMesh, WaterShader->id());
     manager.SetTexture(textureAtlas);
-    engine.AddShaderProgram(std::move(cubeShader));
+    engine.AddShaderProgram(std::move(VoxelShader));
+    engine.AddShaderProgram(std::move(WaterShader));
     std::thread chunkSystemThread{&voxel::ChunkManager::Run, &manager,
                                   std::ref(engine)};
     engine.Run();
