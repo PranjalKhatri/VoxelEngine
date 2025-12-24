@@ -27,18 +27,22 @@ void main()
 
     vec4 texColor = texture(textureAtlas, finalUV);
 
-    if (texColor.a < 0.1)
+    if (texColor.a < 0.5)
         discard;
 
-    // Ambient
-    vec3 ambient = SunLight.ambient * texColor.rgb;
-
-    // Diffuse
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(-SunLight.direction);
     float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = SunLight.diffuse * diff * texColor.rgb;
 
-    vec3 result = ambient + diffuse;
-    FragColor = vec4(result, texColor.a);
+    float faceBrightness = 1.0;
+    if (abs(norm.x) > 0.5) faceBrightness = 0.8; // East/West are slightly darker
+    if (abs(norm.z) > 0.5) faceBrightness = 0.6; // North/South are darker
+    if (norm.y < -0.5) faceBrightness = 0.5; // Bottom is darkest
+    // Top (Y > 0.5) stays at 1.0 (brightest)
+
+    vec3 ambient = SunLight.ambient * faceBrightness;
+    vec3 diffuse = SunLight.diffuse * diff;
+
+    vec3 finalColor = texColor.rgb * (ambient + diffuse);
+    FragColor = vec4(finalColor, 1.0);
 }
