@@ -13,6 +13,7 @@ class Renderable {
     virtual void              Upload()                        = 0;
     virtual void              Draw(gfx::ShaderProgram* const) = 0;
     virtual gfx::ShaderHandle GetShaderProgId() const         = 0;
+    virtual bool              IsTransparent() const           = 0;
 
    private:
 };
