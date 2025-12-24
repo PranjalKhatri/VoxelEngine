@@ -13,5 +13,7 @@ enum class MeshType : uint8_t { kSolidMesh = 0, kWaterMesh, kMeshCount };
 constexpr static bool IsSolidMesh(const MeshType& tp) {
     return tp == MeshType::kSolidMesh;
 }
-
+constexpr static bool IsTransparentMesh(const MeshType& tp) {
+    return !IsSolidMesh(tp);
+}
 }  // namespace pop::gfx::rtypes
