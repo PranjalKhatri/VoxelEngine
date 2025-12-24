@@ -5,6 +5,7 @@
 #include "camera.hpp"
 #include "engine.hpp"
 #include "glm/fwd.hpp"
+#include "rendertypes.hpp"
 
 namespace pop::voxel {
 ChunkManager::ChunkManager(const gfx::FlyCam* player_cam_)
@@ -12,9 +13,9 @@ ChunkManager::ChunkManager(const gfx::FlyCam* player_cam_)
     std::cout << "Manager constructed!!\n";
 }
 
-void ChunkManager::SetShader(gfx::ShaderHandle handle_) {
-    shader_handle_ = handle_;
-    std::cout << "Shader set in chunk manager" << std::endl;
+void ChunkManager::SetShader(gfx::rtypes::MeshType meshType,
+                             gfx::ShaderHandle     handle) {
+    shader_handles_[static_cast<size_t>(meshType)] = handle;
 }
 void ChunkManager::SetTexture(
     std::shared_ptr<gfx::rtypes::TextureBinding> tex) {
@@ -23,10 +24,15 @@ void ChunkManager::SetTexture(
 void ChunkManager::LoadChunk(const ChunkCoord& chunkCoord, Engine& engine) {
     auto chunk = GenerateChunk(chunkCoord);
 
-    auto renderable = chunk->GetSolidRenderable();
-    renderable->AddTexture(tex_);
+    for (int i = 0; i < static_cast<int>(gfx::rtypes::MeshType::kMeshCount);
+         i++) {
+        auto renderable =
+            chunk->GetRenderable(static_cast<gfx::rtypes::MeshType>(i));
+        if (!renderable) continue;
+        renderable->AddTexture(tex_);
+        engine.AddRenderable(renderable);
+    }
 
-    engine.AddRenderable(chunk->GetSolidRenderable());
     loaded_chunks_[chunkCoord] = std::move(chunk);
     std::cout << "Loaded chunk:" << chunkCoord.x << " " << chunkCoord.z << "\n";
 }
@@ -35,7 +41,13 @@ std::unique_ptr<Chunk> ChunkManager::GenerateChunk(
     const ChunkCoord& chunkCoord) {
     auto chunkOffset = ChunkToOffset(chunkCoord);
     auto chunk       = std::make_unique<Chunk>(chunkOffset);
-    chunk->SetShader(shader_handle_);
+    for (size_t i = 0;
+         i < static_cast<size_t>(gfx::rtypes::MeshType::kMeshCount); i++) {
+        auto shader = shader_handles_[i];
+        if (shader) {
+            chunk->SetShader(static_cast<gfx::rtypes::MeshType>(i), shader);
+        }
+    }
     chunk->GenerateMesh();
     return chunk;
 }
@@ -47,7 +59,14 @@ bool ChunkManager::IsChunkLoaded(const ChunkCoord& chunkCoord) {
 void ChunkManager::UnLoadChunk(const ChunkCoord& chunkCoord, Engine& engine) {
     assert(loaded_chunks_.count(chunkCoord) &&
            "Unload call on already unloaded chunk");
-    engine.RemoveRenderable(loaded_chunks_[chunkCoord]->GetSolidRenderable());
+
+    for (int i = 0; i < static_cast<int>(gfx::rtypes::MeshType::kMeshCount);
+         i++) {
+        auto renderable = loaded_chunks_[chunkCoord]->GetRenderable(
+            static_cast<gfx::rtypes::MeshType>(i));
+        if (!renderable) continue;
+        engine.RemoveRenderable(renderable);
+    }
     loaded_chunks_.erase(chunkCoord);
 }
 

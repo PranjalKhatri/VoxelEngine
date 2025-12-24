@@ -41,10 +41,10 @@ class ChunkManager {
     ~ChunkManager() = default;
 
     void Run(Engine& engine);
-    void SetShader(gfx::ShaderHandle handle);
+    void SetShader(gfx::rtypes::MeshType meshType, gfx::ShaderHandle handle);
     void SetTexture(std::shared_ptr<gfx::rtypes::TextureBinding> texture);
 
-    static constexpr int RenderDistance = 16;
+    static constexpr int RenderDistance = 8;
 
    private:
     void LoadChunk(const ChunkCoord& coord, Engine& engine);
@@ -59,6 +59,8 @@ class ChunkManager {
                                                  loaded_chunks_;
     std::shared_ptr<gfx::rtypes::TextureBinding> tex_;
     const gfx::FlyCam*                           player_cam_;
-    gfx::ShaderHandle                            shader_handle_;
+    std::array<gfx::ShaderHandle,
+               static_cast<size_t>(gfx::rtypes::MeshType::kMeshCount)>
+        shader_handles_{};
 };
 };  // namespace pop::voxel
