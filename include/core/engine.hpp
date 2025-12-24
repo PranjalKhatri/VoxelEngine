@@ -1,6 +1,6 @@
 #pragma once
 
-#include "camera.hpp"
+#include "graphics/camera.hpp"
 #include "renderable.hpp"
 // #include "resource_manager.hpp"
 
@@ -8,11 +8,11 @@
 #include <unordered_set>
 
 #include "GLFW/glfw3.h"
-#include "shader.hpp"
+#include "graphics/shader.hpp"
 
-#include "safe_queue.hpp"
+#include "util/safe_queue.hpp"
 
-namespace pop {
+namespace pop::core {
 enum class RenderCmdType { Add, Remove };
 
 struct RenderCmd {
@@ -75,4 +75,4 @@ class Engine {
 
     // gfx::ResourceManager resource_manager_;
 };
-};  // namespace pop
+};  // namespace pop::core

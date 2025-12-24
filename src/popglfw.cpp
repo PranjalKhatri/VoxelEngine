@@ -1,4 +1,4 @@
-#include "popglfw.hpp"
+#include "gl/popglfw.hpp"
 
 namespace pop::GLFW {
 void init(unsigned int versionMajor, unsigned int versionMinor,

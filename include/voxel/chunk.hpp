@@ -1,13 +1,13 @@
 #pragma once
 
 #include "directions.hpp"
-#include "gl_types.hpp"
+#include "gl/gl_types.hpp"
 #include "glm/vec3.hpp"
 #include "glm/fwd.hpp"
-#include "renderable.hpp"
-#include "rendertypes.hpp"
-#include "shader.hpp"
-#include "vertex_buffers.hpp"
+#include "core/renderable.hpp"
+#include "graphics/rendertypes.hpp"
+#include "graphics/shader.hpp"
+#include "graphics/vertex_buffers.hpp"
 #include <array>
 #include <cstdint>
 #include <memory>

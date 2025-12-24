@@ -1,13 +1,13 @@
 #include "glad/glad.h"
-#include "engine.hpp"
-#include "camera.hpp"
+#include "core/engine.hpp"
+#include "graphics/camera.hpp"
 #include "glm/fwd.hpp"
-#include "shader.hpp"
+#include "graphics/shader.hpp"
 #include <iostream>
 #include <memory>
 #include <stdexcept>
 
-namespace pop {
+namespace pop::core {
 Engine::Engine(glm::mat4 projectionMatrix, GLFWwindow *window)
     : is_running_{false},
       cmd_queue_{},
@@ -170,4 +170,4 @@ void Engine::ProcessInput() {
         main_camera_->ProcessKeyboard(gfx::Camera::CameraMovement::Right,
                                       delta_time_);
 }
-}  // namespace pop
+}  // namespace pop::core

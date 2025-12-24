@@ -1,11 +1,11 @@
 #pragma once
 
-#include "camera.hpp"
-#include "engine.hpp"
-#include "chunk.hpp"
-#include "gl_types.hpp"
+#include "graphics/camera.hpp"
+#include "core/engine.hpp"
+#include "voxel/chunk.hpp"
+#include "gl/gl_types.hpp"
 #include "glm/fwd.hpp"
-#include "rendertypes.hpp"
+#include "graphics/rendertypes.hpp"
 
 #include <cstddef>
 #include <memory>
@@ -40,15 +40,15 @@ class ChunkManager {
     ChunkManager(const gfx::FlyCam* player_cam_);
     ~ChunkManager() = default;
 
-    void Run(Engine& engine);
+    void Run(core::Engine& engine);
     void SetShader(gfx::rtypes::MeshType meshType, gfx::ShaderHandle handle);
     void SetTexture(std::shared_ptr<gfx::rtypes::TextureBinding> texture);
 
     static constexpr int RenderDistance = 8;
 
    private:
-    void LoadChunk(const ChunkCoord& coord, Engine& engine);
-    void UnLoadChunk(const ChunkCoord& chunkCoord, Engine& engine);
+    void LoadChunk(const ChunkCoord& coord, core::Engine& engine);
+    void UnLoadChunk(const ChunkCoord& chunkCoord, core::Engine& engine);
 
     std::unique_ptr<Chunk> GenerateChunk(const ChunkCoord& chunkCoord);
 

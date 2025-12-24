@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gl_types.hpp"
+#include "gl/gl_types.hpp"
 #include "glad/glad.h"
 #include <string_view>
 

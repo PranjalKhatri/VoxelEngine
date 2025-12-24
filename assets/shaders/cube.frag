@@ -27,9 +27,6 @@ void main()
 
     vec4 texColor = texture(textureAtlas, finalUV);
 
-    if (texColor.a < 0.5)
-        discard;
-
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(-SunLight.direction);
     float diff = max(dot(norm, lightDir), 0.0);

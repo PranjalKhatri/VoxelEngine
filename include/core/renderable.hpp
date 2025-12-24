@@ -1,7 +1,7 @@
 #pragma once
 
-#include "gl_types.hpp"
-#include "shader.hpp"
+#include "gl/gl_types.hpp"
+#include "graphics/shader.hpp"
 #include <glad/glad.h>
 #include <memory>
 

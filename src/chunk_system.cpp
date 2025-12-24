@@ -1,11 +1,11 @@
-#include "chunk_system.hpp"
+#include "voxel/chunk_system.hpp"
 #include <iostream>
 #include <memory>
 #include <thread>
-#include "camera.hpp"
-#include "engine.hpp"
+#include "graphics/camera.hpp"
+#include "core/engine.hpp"
 #include "glm/fwd.hpp"
-#include "rendertypes.hpp"
+#include "graphics/rendertypes.hpp"
 
 namespace pop::voxel {
 ChunkManager::ChunkManager(const gfx::FlyCam* player_cam_)
@@ -21,7 +21,8 @@ void ChunkManager::SetTexture(
     std::shared_ptr<gfx::rtypes::TextureBinding> tex) {
     tex_ = std::move(tex);
 }
-void ChunkManager::LoadChunk(const ChunkCoord& chunkCoord, Engine& engine) {
+void ChunkManager::LoadChunk(const ChunkCoord& chunkCoord,
+                             core::Engine&     engine) {
     auto chunk = GenerateChunk(chunkCoord);
 
     for (int i = 0; i < static_cast<int>(gfx::rtypes::MeshType::kMeshCount);
@@ -56,7 +57,8 @@ bool ChunkManager::IsChunkLoaded(const ChunkCoord& chunkCoord) {
     return loaded_chunks_.count(chunkCoord);
 }
 
-void ChunkManager::UnLoadChunk(const ChunkCoord& chunkCoord, Engine& engine) {
+void ChunkManager::UnLoadChunk(const ChunkCoord& chunkCoord,
+                               core::Engine&     engine) {
     assert(loaded_chunks_.count(chunkCoord) &&
            "Unload call on already unloaded chunk");
 
@@ -70,7 +72,7 @@ void ChunkManager::UnLoadChunk(const ChunkCoord& chunkCoord, Engine& engine) {
     loaded_chunks_.erase(chunkCoord);
 }
 
-void ChunkManager::Run(Engine& engine) {
+void ChunkManager::Run(core::Engine& engine) {
     std::cout << "Starting ChunkSystem" << std::endl;
     ChunkCoord lastChunk{INT_MAX, INT_MAX};
     while (engine.IsRunning()) {

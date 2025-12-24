@@ -1,6 +1,6 @@
 #pragma once
 
-#include "renderable.hpp"
+#include "core/renderable.hpp"
 
 #include <string>
 #include "vertex_buffers.hpp"

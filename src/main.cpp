@@ -4,15 +4,15 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "engine.hpp"
-#include "gl_types.hpp"
+#include "core/engine.hpp"
+#include "gl/gl_types.hpp"
 #include "glm/fwd.hpp"
-#include "popglfw.hpp"
-#include "rendertypes.hpp"
-#include "shader.hpp"
+#include "gl/popglfw.hpp"
+#include "graphics/rendertypes.hpp"
+#include "graphics/shader.hpp"
 #include "stb_image.h"
-#include "camera.hpp"
-#include "chunk_system.hpp"
+#include "graphics/camera.hpp"
+#include "voxel/chunk_system.hpp"
 
 #include <iostream>
 #include <memory>
@@ -52,7 +52,7 @@ int main() {
     // Tweaked infinite perspective handles the math for a "far plane" at
     // infinity
     glm::mat4 projection = glm::tweakedInfinitePerspective(fov, aspect, near);
-    Engine    engine{projection, window};
+    core::Engine engine{projection, window};
 
     auto cam = std::make_shared<FlyCam>(glm::vec3{0, voxel::Chunk::kSize_y, 3},
                                         glm::vec3{0, 0, 0}, glm::vec3{0, 1, 0});

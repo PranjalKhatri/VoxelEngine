@@ -1,11 +1,11 @@
-#include "chunk.hpp"
-#include "directions.hpp"
-#include "gl_types.hpp"
+#include "voxel/chunk.hpp"
+#include "voxel/directions.hpp"
+#include "gl/gl_types.hpp"
 #include "glad/glad.h"
-#include "rendertypes.hpp"
-#include "shader.hpp"
-#include "vertex_buffers.hpp"
-#include "terrain_generator.hpp"
+#include "graphics/rendertypes.hpp"
+#include "graphics/shader.hpp"
+#include "graphics/vertex_buffers.hpp"
+#include "voxel/terrain_generator.hpp"
 #include <iostream>
 #include <memory>
 

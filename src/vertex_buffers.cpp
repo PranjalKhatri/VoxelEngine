@@ -1,4 +1,4 @@
-#include "vertex_buffers.hpp"
+#include "graphics/vertex_buffers.hpp"
 #include <iostream>
 #include "glad/glad.h"
 
