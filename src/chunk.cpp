@@ -92,17 +92,13 @@ void Voxel::SetType(Voxel::Type vtype) { type_ = vtype; }
 constexpr int VoxelTypeToTexture(const Voxel::Type &voxelType) {
     switch (voxelType) {
         case Voxel::Type::kGrass:
-            return 2;
-        case Voxel::Type::kDirt:
-            return 1;
-        case Voxel::Type::kStone:
-            return 5;
-        case Voxel::Type::kSand:
-            return 4;
-        case Voxel::Type::kTreeBark:
             return 3;
-        case Voxel::Type::kTreeLeaves:
+        case Voxel::Type::kDirt:
+            return 4;
+        case Voxel::Type::kStone:
             return 0;
+        case Voxel::Type::kSand:
+            return 1;
         default:
             return 0;
     }
@@ -146,22 +142,46 @@ void Chunk::ReGenerate() {
     GenerateRenderable();
 }
 void Chunk::PopulateFromHeightMap() {
+    auto &instance = terrain::TerrainGenerator::GetInstance();
+    auto  SetBlock = [&](int x, int y, int z, Voxel::Type vtype) {
+        voxel_data_[Index(x, y, z)].SetType(vtype);
+    };
     for (int x = 0; x < kSize_x; x++) {
         for (int z = 0; z < kSize_z; z++) {
-            float variableMultiplier =
-                terrain::TerrainGenerator::GetInstance().GetHeight(
-                    chunk_offset_.x + x, chunk_offset_.z + z);
-            int cellHeight = kBaseHeight + variableMultiplier * kVariableHeight;
-            int y{};
-            for (; y < cellHeight; y++) {
-                auto index = Index(x, y, z);
-                auto vType = Voxel::Type::kStone;
-                voxel_data_[index].SetType(vType);
-            }
-            for (; y < kWaterBaseline; y++) {
-                auto index = Index(x, y, z);
-                auto vType = Voxel::Type::kWater;
-                voxel_data_[index].SetType(vType);
+            bool surfaceFound = false;
+            for (int y = kSize_y - 1; y >= 0; y--) {
+                float density = instance.GetDensity(chunk_offset_.x + x,
+                                                    chunk_offset_.y + y,
+                                                    chunk_offset_.z + z);
+                if (density > 0) {
+                    if (!surfaceFound) {
+                        if (y >= kWaterBaseline - 1) {
+                            SetBlock(
+                                x, y, z,
+                                Voxel::Type::kGrass);  // The very top layer
+                        } else {
+                            SetBlock(x, y, z,
+                                     Voxel::Type::kSand);  // Underwater floor
+                        }
+                        surfaceFound = true;
+                    } else if (y > (kWaterBaseline - 4) &&
+                               y < (kWaterBaseline)) {
+                        // Just a little dirt/sand under the surface before
+                        // stone starts
+                        SetBlock(x, y, z, Voxel::Type::kDirt);
+                    } else {
+                        SetBlock(x, y, z,
+                                 Voxel::Type::kStone);  // Deep underground
+                    }
+                } else {
+                    if (y <= kWaterBaseline) {
+                        SetBlock(x, y, z,
+                                 Voxel::Type::kWater);  // Fill empty gaps below
+                                                        // sea level
+                    } else {
+                        SetBlock(x, y, z, Voxel::Type::kAir);
+                    }
+                }
             }
         }
     }
