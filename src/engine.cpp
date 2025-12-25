@@ -44,7 +44,7 @@ void Engine::ProcessCommands() {
         if (!cmd) break;
         switch (cmd->type) {
             case RenderCmdType::Add:
-                std::cout << "Added renderable\n";
+                // std::cout << "Added renderable\n";
                 cmd->renderable->Upload();
                 if (cmd->renderable->IsTransparent())
                     transparent_renderables_.insert(std::move(cmd->renderable));
@@ -52,7 +52,7 @@ void Engine::ProcessCommands() {
                     solid_renderables_.insert(std::move(cmd->renderable));
                 break;
             case RenderCmdType::Remove:
-                std::cout << "removed renderable\n";
+                // std::cout << "removed renderable\n";
                 if (cmd->renderable->IsTransparent())
                     transparent_renderables_.erase(std::move(cmd->renderable));
                 else
@@ -88,7 +88,7 @@ void Engine::Run() {
 
         UpdateDeltaTime();
         ProcessInput();
-
+        if (rand() % 99) std::cout << "fps " << 1.0 / delta_time_ << "\n";
         Render();
 
         glfwSwapBuffers(window_);

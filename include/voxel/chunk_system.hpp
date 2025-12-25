@@ -13,7 +13,10 @@
 
 namespace pop::voxel {
 struct ChunkCoord {
-    int  x, z;
+    int        x, z;
+    ChunkCoord operator+(const ChunkCoord& other) const {
+        return ChunkCoord{x + other.x, z + other.z};
+    }
     bool operator==(const ChunkCoord& other) const noexcept {
         return x == other.x && z == other.z;
     }
@@ -47,10 +50,14 @@ class ChunkManager {
     static constexpr int RenderDistance = 8;
 
    private:
-    void LoadChunk(const ChunkCoord& coord, core::Engine& engine);
+    void UploadChunkToEngine(const ChunkCoord& coord, core::Engine& engine);
+    // WARN:Doesn't erase from the loaded_chunks
     void UnLoadChunk(const ChunkCoord& chunkCoord, core::Engine& engine);
+    // Helper to get raw ptr from the map
+    Chunk* GetRawChunkPtr(const ChunkCoord& coord);
 
     std::unique_ptr<Chunk> GenerateChunk(const ChunkCoord& chunkCoord);
+    void LinkAndMesh(const ChunkCoord& coord, core::Engine& engine);
 
     bool IsChunkLoaded(const ChunkCoord& chunkCoord);
 

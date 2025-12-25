@@ -57,7 +57,7 @@ class ChunkRenderable : public Renderable {
     void              Upload() override;
     void              Draw(gfx::ShaderProgram* const shader_program) override;
     gfx::ShaderHandle GetShaderProgId() const override;
-    bool              IsTransparent() const { return is_transparent_; }
+    bool              IsTransparent() const override { return is_transparent_; }
 
     void AddTexture(std::shared_ptr<gfx::rtypes::TextureBinding> texture);
     void AddAttribute(const gfx::Attribute& attribute);
@@ -90,30 +90,39 @@ class Chunk {
     constexpr static int kSize_z         = 16;
     constexpr static int kNumMeshes =
         static_cast<int>(gfx::rtypes::MeshType::kMeshCount);
+    // top and bottom direction should be nullptr.
+    using NeighborArray = std::array<Chunk*, 6>;
+
+    constexpr static int Index(int x, int y, int z);
 
     Chunk(glm::ivec3 chunkOffset);
     ~Chunk() = default;
 
     void GenerateMesh();
+    void SetNeighbors(const NeighborArray& neighbors) {
+        neighbors_ = neighbors;
+    }
     void SetShader(gfx::rtypes::MeshType shaderMeshType,
                    gfx::ShaderHandle     shaderHandle);
-
-    constexpr static int Index(int x, int y, int z);
 
     std::shared_ptr<ChunkRenderable> GetRenderable(
         gfx::rtypes::MeshType mtype) const;
 
    private:
-    void GenerateVoxel(int x, int y, int z,
+    void GenerateVoxel(int x, int y, int z, Voxel::Type vtype,
                        const std::shared_ptr<ChunkRenderable>& mesh);
     void GenerateRenderable();
     void PopulateFromHeightMap();
-    bool IsSolid(int x, int y, int z) const;
+    bool ShouldDrawFace(Voxel::Type current, Voxel::Type neighbor) const;
+
+    Voxel::Type GetLocalVoxelType(int x, int y, int z) const;
+    Voxel::Type GetVoxelType(int x, int y, int z) const;
 
    private:
     glm::ivec3 chunk_offset_{};
 
     std::unique_ptr<Voxel[]> voxel_data_{};
+    NeighborArray            neighbors_{};
 
     std::array<gfx::ShaderHandle, kNumMeshes>                shader_ids_{};
     std::array<std::shared_ptr<ChunkRenderable>, kNumMeshes> meshes_{};

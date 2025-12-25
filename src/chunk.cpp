@@ -67,6 +67,7 @@ void ChunkRenderable::Upload() {
     // vertex_data_->clear();  // free heap memmory after sending it to gpu
 }
 void ChunkRenderable::Draw(gfx::ShaderProgram *const shader_program) {
+    if (!vertex_data_) return;
     vao_.Bind();
 
     for (auto i : textures_) {
@@ -111,9 +112,11 @@ constexpr const float *FaceGeometry::GetFace(pop::direction faceDirection) {
     return kFaceTable[static_cast<int>(faceDirection)];
 }
 // ==============CHUNK===============
-Chunk::Chunk(glm::ivec3 chunkOffset)
-    : chunk_offset_(chunkOffset), voxel_data_{} {}
-constexpr int Chunk::Index(int x, int y, int z) {
+Chunk::Chunk(glm::ivec3 chunkOffset) : chunk_offset_(chunkOffset) {
+    voxel_data_ = std::make_unique<Voxel[]>(kSize_x * kSize_y * kSize_z);
+    PopulateFromHeightMap();
+}
+constexpr inline int Chunk::Index(int x, int y, int z) {
     return x + kSize_x * (y + kSize_y * z);
 }
 
@@ -129,13 +132,11 @@ std::shared_ptr<ChunkRenderable> Chunk::GetRenderable(
 }
 
 void Chunk::GenerateMesh() {
-    voxel_data_ = std::make_unique<Voxel[]>(kSize_x * kSize_y * kSize_z);
     for (int i = 0; i < kNumMeshes; i++)
         meshes_[i] = std::make_shared<ChunkRenderable>(
             shader_ids_[i], gfx::rtypes::IsTransparentMesh(
                                 static_cast<gfx::rtypes::MeshType>(i)));
 
-    PopulateFromHeightMap();
     GenerateRenderable();
 }
 void Chunk::PopulateFromHeightMap() {
@@ -168,11 +169,11 @@ void Chunk::GenerateRenderable() {
                 auto vtype = voxel_data_[index].GetType();
                 if (vtype == Voxel::Type::kAir) continue;
                 if (vtype == Voxel::Type::kWater)
-                    GenerateVoxel(x, y, z,
+                    GenerateVoxel(x, y, z, vtype,
                                   meshes_[MeshToIndex(
                                       gfx::rtypes::MeshType::kWaterMesh)]);
                 else
-                    GenerateVoxel(x, y, z,
+                    GenerateVoxel(x, y, z, vtype,
                                   meshes_[MeshToIndex(
                                       gfx::rtypes::MeshType::kSolidMesh)]);
             }
@@ -191,7 +192,20 @@ void Chunk::GenerateRenderable() {
         mesh->SetChunkOffset(chunk_offset_);
     }
 }
-void Chunk::GenerateVoxel(int x, int y, int z,
+bool Chunk::ShouldDrawFace(Voxel::Type current, Voxel::Type neighbor) const {
+    if (neighbor == Voxel::Type::kAir) return true;
+
+    if (current == Voxel::Type::kWater) {
+        // Water ONLY draws against Air.
+        // It does NOT draw against other water (prevents internal faces)
+        // It does NOT draw against solids (solids draw their own face)
+        return false;
+    } else {
+        // Solid draws against Air (standard) and Water (transparency)
+        return (neighbor == Voxel::Type::kWater);
+    }
+}
+void Chunk::GenerateVoxel(int x, int y, int z, Voxel::Type vtype,
                           const std::shared_ptr<ChunkRenderable> &mesh) {
     constexpr int floats_per_vertex = 5;
     constexpr int floats_per_face   = floats_per_vertex * 6;
@@ -211,26 +225,50 @@ void Chunk::GenerateVoxel(int x, int y, int z,
                 VoxelTypeToTexture(voxel_data_[Index(x, y, z)].GetType()));
         }
     };
-    if (!IsSolid(x, y + 1, z)) emit_face(direction::kTop);
-    if (!IsSolid(x, y - 1, z)) emit_face(direction::kBottom);
-    if (!IsSolid(x + 1, y, z)) emit_face(direction::kEast);
-    if (!IsSolid(x - 1, y, z)) emit_face(direction::kWest);
-    if (!IsSolid(x, y, z - 1)) emit_face(direction::kNorth);
-    if (!IsSolid(x, y, z + 1)) emit_face(direction::kSouth);
+    if (ShouldDrawFace(vtype, GetVoxelType(x, y + 1, z)))
+        emit_face(direction::kTop);
+    if (ShouldDrawFace(vtype, GetVoxelType(x, y - 1, z)))
+        emit_face(direction::kBottom);
+    if (ShouldDrawFace(vtype, GetVoxelType(x, y, z - 1)))
+        emit_face(direction::kNorth);
+    if (ShouldDrawFace(vtype, GetVoxelType(x, y, z + 1)))
+        emit_face(direction::kSouth);
+    if (ShouldDrawFace(vtype, GetVoxelType(x - 1, y, z)))
+        emit_face(direction::kWest);
+    if (ShouldDrawFace(vtype, GetVoxelType(x + 1, y, z)))
+        emit_face(direction::kEast);
 }
-
-bool Chunk::IsSolid(int x, int y, int z) const {
-    // Inside this chunk
+inline Voxel::Type Chunk::GetLocalVoxelType(int x, int y, int z) const {
+    assert(x < kSize_x && y < kSize_y && z < kSize_z &&
+           "GetLocalVoxelType out of bounds");
+    return voxel_data_[Index(x, y, z)].GetType();
+}
+Voxel::Type Chunk::GetVoxelType(int x, int y, int z) const {
+    // 1. Local Check
     if (x >= 0 && x < kSize_x && y >= 0 && y < kSize_y && z >= 0 &&
         z < kSize_z) {
-        return voxel_data_[Index(x, y, z)].IsSolid();
+        return GetLocalVoxelType(x, y, z);
     }
 
-    // TODO: check neighbor chunks
-    // Example:
-    // if (x < 0) return leftChunk && leftChunk->IsSolid(x + kSize_x, y, z);
-    // if (x >= kSize_x) return rightChunk && rightChunk->IsSolid(x - kSize_x,
-    // y, z);
-    return false;
+    // 2. Neighbor Check (Top, Bottom, North, South, West, East)
+    Chunk *neighbor = nullptr;
+    int    nx = x, ny = y, nz = z;
+
+    if (z < 0) {
+        neighbor = neighbors_[static_cast<int>(direction::kNorth)];
+        nz       = kSize_z - 1;
+    } else if (z >= kSize_z) {
+        neighbor = neighbors_[static_cast<int>(direction::kSouth)];
+        nz       = 0;
+    } else if (x < 0) {
+        neighbor = neighbors_[static_cast<int>(direction::kEast)];
+        nx       = kSize_x - 1;
+    } else if (x >= kSize_x) {
+        neighbor = neighbors_[static_cast<int>(direction::kWest)];
+        nx       = 0;
+    }
+
+    return neighbor ? neighbor->GetLocalVoxelType(nx, ny, nz)
+                    : Voxel::Type::kAir;
 }
 };  // namespace pop::voxel

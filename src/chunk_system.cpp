@@ -6,6 +6,8 @@
 #include "core/engine.hpp"
 #include "glm/fwd.hpp"
 #include "graphics/rendertypes.hpp"
+#include "voxel/chunk.hpp"
+#include "voxel/directions.hpp"
 
 namespace pop::voxel {
 ChunkManager::ChunkManager(const gfx::FlyCam* player_cam_)
@@ -21,21 +23,24 @@ void ChunkManager::SetTexture(
     std::shared_ptr<gfx::rtypes::TextureBinding> tex) {
     tex_ = std::move(tex);
 }
-void ChunkManager::LoadChunk(const ChunkCoord& chunkCoord,
-                             core::Engine&     engine) {
-    auto chunk = GenerateChunk(chunkCoord);
+Chunk* ChunkManager::GetRawChunkPtr(const ChunkCoord& coord) {
+    auto it = loaded_chunks_.find(coord);
+    return (it != loaded_chunks_.end()) ? it->second.get() : nullptr;
+}
+void ChunkManager::UploadChunkToEngine(const ChunkCoord& chunkCoord,
+                                       core::Engine&     engine) {
+    auto& chunk = loaded_chunks_[chunkCoord];
 
     for (int i = 0; i < static_cast<int>(gfx::rtypes::MeshType::kMeshCount);
          i++) {
         auto renderable =
             chunk->GetRenderable(static_cast<gfx::rtypes::MeshType>(i));
         if (!renderable) continue;
-        renderable->AddTexture(tex_);
         engine.AddRenderable(renderable);
     }
 
-    loaded_chunks_[chunkCoord] = std::move(chunk);
-    std::cout << "Loaded chunk:" << chunkCoord.x << " " << chunkCoord.z << "\n";
+    // std::cout << "Loaded chunk:" << chunkCoord.x << " " << chunkCoord.z <<
+    // "\n";
 }
 
 std::unique_ptr<Chunk> ChunkManager::GenerateChunk(
@@ -49,8 +54,36 @@ std::unique_ptr<Chunk> ChunkManager::GenerateChunk(
             chunk->SetShader(static_cast<gfx::rtypes::MeshType>(i), shader);
         }
     }
-    chunk->GenerateMesh();
     return chunk;
+}
+
+void ChunkManager::LinkAndMesh(const ChunkCoord& coord, core::Engine& engine) {
+    auto& chunk = loaded_chunks_[coord];
+
+    // Order: 0:Top, 1:Bottom, 2:North, 3:South, 4:West, 5:East
+    Chunk::NeighborArray neighbors;
+    neighbors[static_cast<int>(direction::kTop)]    = nullptr;
+    neighbors[static_cast<int>(direction::kBottom)] = nullptr;
+    neighbors[static_cast<int>(direction::kNorth)] =
+        GetRawChunkPtr(coord + ChunkCoord{0, -1});
+    neighbors[static_cast<int>(direction::kSouth)] =
+        GetRawChunkPtr(coord + ChunkCoord{0, 1});
+    neighbors[static_cast<int>(direction::kEast)] =
+        GetRawChunkPtr(coord + ChunkCoord{-1, 0});
+    neighbors[static_cast<int>(direction::kWest)] =
+        GetRawChunkPtr(coord + ChunkCoord{1, 0});
+    chunk->SetNeighbors(neighbors);
+    chunk->GenerateMesh();
+
+    for (int i = 0; i < static_cast<int>(gfx::rtypes::MeshType::kMeshCount);
+         i++) {
+        auto renderable =
+            chunk->GetRenderable(static_cast<gfx::rtypes::MeshType>(i));
+        if (renderable) {
+            renderable->AddTexture(tex_);
+            engine.AddRenderable(renderable);
+        }
+    }
 }
 
 bool ChunkManager::IsChunkLoaded(const ChunkCoord& chunkCoord) {
@@ -69,37 +102,43 @@ void ChunkManager::UnLoadChunk(const ChunkCoord& chunkCoord,
         if (!renderable) continue;
         engine.RemoveRenderable(renderable);
     }
-    loaded_chunks_.erase(chunkCoord);
 }
 
 void ChunkManager::Run(core::Engine& engine) {
     std::cout << "Starting ChunkSystem" << std::endl;
     ChunkCoord lastChunk{INT_MAX, INT_MAX};
     while (engine.IsRunning()) {
-        auto playerPosition = player_cam_->GetPosition();
-        auto currentChunk   = WorldToChunkCoord(playerPosition);
+        auto currentChunk = WorldToChunkCoord(player_cam_->GetPosition());
         if (currentChunk == lastChunk) {
             std::this_thread::sleep_for(std::chrono::milliseconds(30));
             continue;
         }
         lastChunk = currentChunk;
-        std::unordered_set<ChunkCoord, ChunkCoordHash> loadedIndices;
-        for (auto& i : loaded_chunks_) loadedIndices.insert(i.first);
+        std::unordered_set<ChunkCoord, ChunkCoordHash> activeCoords;
         for (int x = -RenderDistance; x <= RenderDistance; x++) {
             for (int z = -RenderDistance; z <= RenderDistance; z++) {
-                auto nextChunk  = currentChunk;
-                nextChunk.x    += x;
-                nextChunk.z    += z;
-                if (!IsChunkLoaded(nextChunk)) {
-                    LoadChunk(nextChunk, engine);
-                }
-                loadedIndices.erase(nextChunk);
+                auto nextChunk =
+                    ChunkCoord{currentChunk.x + x, currentChunk.z + z};
+                activeCoords.insert(nextChunk);
             }
         }
-        for (auto i : loadedIndices) {
-            UnLoadChunk(i, engine);
+        for (const auto& coord : activeCoords) {
+            if (loaded_chunks_.find(coord) == loaded_chunks_.end()) {
+                loaded_chunks_[coord] = GenerateChunk(coord);
+            }
         }
-        loadedIndices.clear();
+        for (const auto& coord : activeCoords) {
+            LinkAndMesh(coord, engine);
+            UploadChunkToEngine(coord, engine);
+        }
+        for (auto it = loaded_chunks_.begin(); it != loaded_chunks_.end();) {
+            if (activeCoords.find(it->first) == activeCoords.end()) {
+                UnLoadChunk(it->first, engine);
+                it = loaded_chunks_.erase(it);
+            } else {
+                ++it;
+            }
+        }
     }
     std::cout << "ChunkManager stopped!\n";
 }
