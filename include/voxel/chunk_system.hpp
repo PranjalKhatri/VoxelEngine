@@ -17,6 +17,9 @@ struct ChunkCoord {
     ChunkCoord operator+(const ChunkCoord& other) const {
         return ChunkCoord{x + other.x, z + other.z};
     }
+    ChunkCoord operator-(const ChunkCoord& other) const {
+        return ChunkCoord{x - other.x, z - other.z};
+    }
     bool operator==(const ChunkCoord& other) const noexcept {
         return x == other.x && z == other.z;
     }
@@ -57,8 +60,11 @@ class ChunkManager {
     Chunk* GetRawChunkPtr(const ChunkCoord& coord);
 
     std::unique_ptr<Chunk> GenerateChunk(const ChunkCoord& chunkCoord);
+
+    void LinkChunkNeighbors(const ChunkCoord& coord);
     void LinkAndMesh(const ChunkCoord& coord, core::Engine& engine);
 
+    void InitialLoad(core::Engine& engine);
     bool IsChunkLoaded(const ChunkCoord& chunkCoord);
 
    private:
