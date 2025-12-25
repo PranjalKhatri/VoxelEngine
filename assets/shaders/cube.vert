@@ -21,12 +21,12 @@ void main()
     float fz = fract(worldPos.z);
 
     int face = int(aNormal + 0.5);
-    if (face == 0) Normal = vec3(1, 0, 0); // Right
-    else if (face == 1) Normal = vec3(-1, 0, 0); // Left
-    else if (face == 2) Normal = vec3(0, 1, 0); // Up
-    else if (face == 3) Normal = vec3(0, -1, 0); // Down
-    else if (face == 4) Normal = vec3(0, 0, 1); // Front
-    else if (face == 5) Normal = vec3(0, 0, -1); // Back
+    if (face == 0) Normal = vec3(0, 1, 0); // Top
+    else if (face == 1) Normal = vec3(0, -1, 0); // Bottom
+    else if (face == 2) Normal = vec3(0, 0, -1); // North
+    else if (face == 3) Normal = vec3(0, 0, 1); // South
+    else if (face == 4) Normal = vec3(1, 0, 0); // West
+    else Normal = vec3(-1, 0, 0); // East
     if (face == 4 || face == 5)
         TexCoord = aPos.zy;
     else if (face == 0 || face == 1)
