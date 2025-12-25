@@ -36,14 +36,14 @@ void ChunkRenderable::AddTexture(
         if (i->slot == texture->slot) {
             std::cerr << "Texture slot already in use: " << int(texture->slot)
                       << "\n";
-            return;  // ❗ do NOT throw
+            return;
         }
     }
     textures_.emplace_back(std::move(texture));
 }
 void ChunkRenderable::Upload() {
     if (!vertex_data_ || vertex_data_->empty()) {
-        std::cout << "Upload called on empty data\n";
+        // std::cout << "Upload called on empty data\n";
         return;
     }
     if (attributes_.empty()) {
@@ -54,7 +54,7 @@ void ChunkRenderable::Upload() {
     vbo_.Bind();
 
     vbo_.BufferData(vertex_data_->size() * sizeof(float), vertex_data_->data(),
-                    GL_STATIC_DRAW);
+                    GL_DYNAMIC_DRAW);
 
     for (const auto &attr : attributes_) {
         vao_.AddAttribute(attr);
@@ -137,6 +137,12 @@ void Chunk::GenerateMesh() {
             shader_ids_[i], gfx::rtypes::IsTransparentMesh(
                                 static_cast<gfx::rtypes::MeshType>(i)));
 
+    GenerateRenderable();
+}
+void Chunk::ReGenerate() {
+    for (int i = 0; i < kNumMeshes; i++) {
+        meshes_[i]->clearData();
+    }
     GenerateRenderable();
 }
 void Chunk::PopulateFromHeightMap() {

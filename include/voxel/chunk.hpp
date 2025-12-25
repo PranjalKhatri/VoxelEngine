@@ -63,6 +63,12 @@ class ChunkRenderable : public Renderable {
     void AddAttribute(const gfx::Attribute& attribute);
     void AddVertexData(const std::vector<float>& data);
     void SetChunkOffset(const glm::ivec3& offset) { chunk_offset_ = offset; }
+    void clearData() {
+        vertex_data_->clear();
+        attributes_.clear();
+        textures_.clear();
+        num_triangles_ = 0;
+    }
     std::vector<float>& VertexData() { return *vertex_data_; }
 
    private:
@@ -83,10 +89,10 @@ class ChunkRenderable : public Renderable {
 class Chunk {
    public:
     constexpr static int kSize_x         = 16;
-    constexpr static int kBaseHeight     = 20;
-    constexpr static int kVariableHeight = 20;
+    constexpr static int kBaseHeight     = 64;
+    constexpr static int kVariableHeight = 64;
     constexpr static int kSize_y         = kBaseHeight + kVariableHeight;
-    constexpr static int kWaterBaseline  = kBaseHeight - 5;
+    constexpr static int kWaterBaseline  = kBaseHeight - 2;
     constexpr static int kSize_z         = 16;
     constexpr static int kNumMeshes =
         static_cast<int>(gfx::rtypes::MeshType::kMeshCount);
@@ -99,6 +105,8 @@ class Chunk {
     ~Chunk() = default;
 
     void GenerateMesh();
+    // call to regenerate the mesh on existing chunkrenderable
+    void ReGenerate();
     void SetNeighbors(const NeighborArray& neighbors) {
         neighbors_ = neighbors;
     }
