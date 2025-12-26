@@ -14,9 +14,7 @@ Engine::Engine(glm::mat4 projectionMatrix, GLFWwindow *window)
       window_(window),
       solid_renderables_{},
       projection_matrix_{projectionMatrix} {
-    glfwSetWindowUserPointer(window_, this);
-    glfwSetCursorPosCallback(window_, MouseCallback);
-    glfwSetFramebufferSizeCallback(window_, FramebufferSizeCallback);
+    SetupCallbacks();
     is_running_ = true;
 }
 
@@ -35,6 +33,25 @@ void Engine::RemoveRenderable(std::shared_ptr<Renderable> renderable) {
 }
 void Engine::SetMainCamera(std::shared_ptr<gfx::Camera> cam) {
     main_camera_ = std::move(cam);
+}
+void Engine::SetupCallbacks() {
+    glfwSetWindowUserPointer(window_, this);
+    glfwSetCursorPosCallback(window_, MouseCallback);
+    glfwSetFramebufferSizeCallback(window_, FramebufferSizeCallback);
+    glfwSetMouseButtonCallback(window_, [](GLFWwindow *window, int button,
+                                           int action, int mods) {
+        auto *engine = static_cast<Engine *>(glfwGetWindowUserPointer(window));
+        if (engine)
+            engine->GetInputManager().HandleMouseEvent(button, action, mods);
+    });
+    glfwSetKeyCallback(window_, [](GLFWwindow *win, int key, int scancode,
+                                   int action, int mods) {
+        auto *engine = static_cast<Engine *>(glfwGetWindowUserPointer(win));
+        if (engine) {
+            engine->GetInputManager().HandleKeyboardEvent(key, scancode, action,
+                                                          mods);
+        }
+    });
 }
 void Engine::ProcessCommands() {
     // TODO: compare performance by limiting number of commands processed per
@@ -88,7 +105,7 @@ void Engine::Run() {
 
         UpdateDeltaTime();
         ProcessInput();
-        if (rand() % 99) std::cout << "fps " << 1.0 / delta_time_ << "\n";
+        // if (rand() % 99) std::cout << "fps " << 1.0 / delta_time_ << "\n";
         Render();
 
         glfwSwapBuffers(window_);

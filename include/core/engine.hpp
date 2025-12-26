@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/input_manager.hpp"
 #include "graphics/camera.hpp"
 #include "renderable.hpp"
 // #include "resource_manager.hpp"
@@ -35,17 +36,15 @@ class Engine {
     void AddRenderable(std::shared_ptr<Renderable> renderable);
     void RemoveRenderable(std::shared_ptr<Renderable> renderable);
 
-    // void AddRenderable(const std::shared_ptr<Renderable>& renderable);
-    // void RemoveRenderable(const std::shared_ptr<Renderable>& renderable);
-
-    // gfx::ResourceManager&       Resources();
-    // const gfx::ResourceManager& Resources() const;
     void AddShaderProgram(std::unique_ptr<gfx::ShaderProgram> prog);
 
     void Run();
 
     float GetDeltaTime() const;
     bool  IsRunning() const;
+
+    void          SetupCallbacks();
+    InputManager& GetInputManager() { return input_manager_; }
 
     static void MouseCallback(GLFWwindow* window, double xpos, double ypos);
     static void FramebufferSizeCallback(GLFWwindow* window, int width,
@@ -62,6 +61,8 @@ class Engine {
     float delta_time_{};
     bool  is_running_{};
 
+    InputManager input_manager_;
+
     util::CmdQueue<RenderCmd> cmd_queue_;
 
     GLFWwindow* window_{};
@@ -69,7 +70,8 @@ class Engine {
     std::unordered_set<std::shared_ptr<Renderable>> solid_renderables_{},
         transparent_renderables_;
     std::unordered_map<gfx::ShaderHandle, std::unique_ptr<gfx::ShaderProgram>>
-                                 shader_prog_map_{};
+        shader_prog_map_{};
+
     std::shared_ptr<gfx::Camera> main_camera_{};
     glm::mat4                    projection_matrix_{};
 
