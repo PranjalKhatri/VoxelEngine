@@ -10,13 +10,15 @@ class Camera {
     enum class CameraMovement { Forward, Backward, Right, Left };
 
     Camera(glm::vec3 position, glm::vec3 target, glm::vec3 up);
+    virtual ~Camera() = default;
     glm::mat4 GetViewMatrix() const;
 
-    virtual void ProcessKeyboard(CameraMovement direction, float deltaTime) {};
-    virtual void ProcessMouseMovement(float xoffset, float yoffset) {};
-    glm::vec3    GetPosition() const { return position_; }
-    glm::vec3    GetUp() const { return up_; }
-    glm::vec3    GetForward() const { return -back_; }
+    virtual void ProcessKeyboard(CameraMovement direction, float deltaTime) = 0;
+    virtual void ProcessMouseMovement(float xoffset, float yoffset)         = 0;
+
+    glm::vec3 GetPosition() const { return position_; }
+    glm::vec3 GetUp() const { return up_; }
+    glm::vec3 GetForward() const { return -back_; }
 
    protected:
     glm::vec3 position_;
