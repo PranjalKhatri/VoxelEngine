@@ -56,15 +56,18 @@ void ChunkRenderable::Upload() {
     vbo_.BufferData(vertex_data_->size() * sizeof(float), vertex_data_->data(),
                     GL_DYNAMIC_DRAW);
 
-    for (const auto &attr : attributes_) {
-        vao_.AddAttribute(attr);
+    if (first_upload_) {
+        for (const auto &attr : attributes_) {
+            vao_.AddAttribute(attr);
+        }
     }
     vbo_.UnBind();
     vao_.UnBind();
+    num_vertices_ = vertex_data_->size() / 7;
     // std::cout << "Chunk Renderale uploaded " << vertex_data_->size()
     //           << " values; vao_: " << vao_.id() << "\n";
-    num_triangles_ = vertex_data_->size() / 7.0;
-    // vertex_data_->clear();  // free heap memmory after sending it to gpu
+    vertex_data_->clear();  // free heap memmory after sending it to gpu
+    first_upload_ = false;
 }
 void ChunkRenderable::Draw(gfx::ShaderProgram *const shader_program) {
     if (!vertex_data_) return;
@@ -76,7 +79,7 @@ void ChunkRenderable::Draw(gfx::ShaderProgram *const shader_program) {
     shader_program->SetUniformFloat3("uChunkOffset", chunk_offset_.x,
                                      chunk_offset_.y, chunk_offset_.z);
 
-    glDrawArrays(GL_TRIANGLES, 0, num_triangles_);
+    glDrawArrays(GL_TRIANGLES, 0, num_vertices_);
 }
 
 // ==============VOXEL==============

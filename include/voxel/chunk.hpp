@@ -68,17 +68,18 @@ class ChunkRenderable : public Renderable {
         vertex_data_->clear();
         attributes_.clear();
         textures_.clear();
-        num_triangles_ = 0;
+        // num_vertices_ = 0;
     }
     std::vector<float>& VertexData() { return *vertex_data_; }
 
    private:
+    bool              first_upload_{true};
     bool              is_transparent_;
     gfx::VertexArray  vao_{true};
     gfx::GLBuffer     vbo_{gfx::BufferType::kArrayBuffer, true};
     gfx::GLBuffer     ebo_{gfx::BufferType::kElementArrayBuffer, true};
     gfx::ShaderHandle shader_id_;
-    int               num_triangles_{};
+    int               num_vertices_{};
     std::vector<std::shared_ptr<gfx::rtypes::TextureBinding>> textures_;
 
     glm::ivec3 chunk_offset_{};
