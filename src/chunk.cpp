@@ -81,8 +81,8 @@ void ChunkRenderable::Draw(gfx::ShaderProgram *const shader_program) {
 
 // ==============VOXEL==============
 Voxel::Voxel(Voxel::Type vtype) : type_(vtype) {}
-bool Voxel::IsSolid() const {
-    return type_ != Type::kAir && type_ != Type::kWater;
+bool Voxel::IsSolid(Type type) {
+    return type != Type::kAir && type != Type::kWater;
 }
 
 Voxel::Type Voxel::GetType() const { return type_; }
@@ -112,10 +112,25 @@ Chunk::Chunk(glm::ivec3 chunkOffset) : chunk_offset_(chunkOffset) {
     voxel_data_ = std::make_unique<Voxel[]>(kSize_x * kSize_y * kSize_z);
     PopulateFromHeightMap();
 }
+
+Voxel::Type Chunk::GetVoxelAtCoord(const glm::ivec3 &coord) const {
+    return voxel_data_[Index(coord.x, coord.y, coord.z)].GetType();
+}
+
 constexpr inline int Chunk::Index(int x, int y, int z) {
     return x + kSize_x * (y + kSize_y * z);
 }
 
+void Chunk::BreakBlock(const glm::ivec3 &coord) {
+    SetVoxelType(Index(coord.x, coord.y, coord.z), Voxel::Type::kAir);
+}
+
+void Chunk::AddBlock(const glm::ivec3 &coord, Voxel::Type vtype) {
+    SetVoxelType(Index(coord.x, coord.y, coord.z), vtype);
+}
+void Chunk::SetVoxelType(int index, Voxel::Type vtype) {
+    voxel_data_[index].SetType(vtype);
+}
 void Chunk::SetShader(gfx::rtypes::MeshType shaderMeshType,
                       gfx::ShaderHandle     shaderHandle) {
     const size_t index = MeshToIndex(shaderMeshType);

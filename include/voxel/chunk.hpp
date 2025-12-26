@@ -29,8 +29,9 @@ class Voxel {
 
     Voxel(Type type = Type::kAir);
 
-    bool IsSolid() const;
-    Type GetType() const;
+    static bool IsSolid(Type type);
+    bool        IsSolid() const { return IsSolid(type_); }
+    Type        GetType() const;
 
     void SetType(Type vtype);
 
@@ -104,7 +105,10 @@ class Chunk {
     Chunk(glm::ivec3 chunkOffset);
     ~Chunk() = default;
 
-    void GenerateMesh();
+    void        BreakBlock(const glm::ivec3& coord);
+    void        AddBlock(const glm::ivec3& coord, Voxel::Type vtype);
+    Voxel::Type GetVoxelAtCoord(const glm::ivec3& coord) const;
+    void        GenerateMesh();
     // call to regenerate the mesh on existing chunkrenderable
     void ReGenerate();
     void SetNeighbors(const NeighborArray& neighbors) {
@@ -131,6 +135,7 @@ class Chunk {
 
     std::unique_ptr<Voxel[]> voxel_data_{};
     NeighborArray            neighbors_{};
+    void                     SetVoxelType(int index, Voxel::Type vtype);
 
     std::array<gfx::ShaderHandle, kNumMeshes>                shader_ids_{};
     std::array<std::shared_ptr<ChunkRenderable>, kNumMeshes> meshes_{};
