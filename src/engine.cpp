@@ -26,10 +26,13 @@ void Engine::AddShaderProgram(std::unique_ptr<gfx::ShaderProgram> shaderProg) {
     shader_prog_map_[shaderProg->id()] = std::move(shaderProg);
 }
 void Engine::AddRenderable(std::shared_ptr<Renderable> renderable) {
-    cmd_queue_.push({RenderCmdType::Add, std::move(renderable)});
+    cmd_queue_.push({RenderCmdType::kAdd, std::move(renderable)});
+}
+void Engine::UpdateRenderable(std::shared_ptr<Renderable> renderable) {
+    cmd_queue_.push({RenderCmdType::kUpdate, std::move(renderable)});
 }
 void Engine::RemoveRenderable(std::shared_ptr<Renderable> renderable) {
-    cmd_queue_.push({RenderCmdType::Remove, std::move(renderable)});
+    cmd_queue_.push({RenderCmdType::kRemove, std::move(renderable)});
 }
 void Engine::SetMainCamera(std::shared_ptr<gfx::Camera> cam) {
     main_camera_ = std::move(cam);
@@ -60,7 +63,7 @@ void Engine::ProcessCommands() {
         auto cmd = cmd_queue_.try_pop();
         if (!cmd) break;
         switch (cmd->type) {
-            case RenderCmdType::Add:
+            case RenderCmdType::kAdd:
                 // std::cout << "Added renderable\n";
                 cmd->renderable->Upload();
                 if (cmd->renderable->IsTransparent())
@@ -68,7 +71,10 @@ void Engine::ProcessCommands() {
                 else
                     solid_renderables_.insert(std::move(cmd->renderable));
                 break;
-            case RenderCmdType::Remove:
+            case RenderCmdType::kUpdate:
+                cmd->renderable->Upload();
+                break;
+            case RenderCmdType::kRemove:
                 // std::cout << "removed renderable\n";
                 if (cmd->renderable->IsTransparent())
                     transparent_renderables_.erase(std::move(cmd->renderable));
