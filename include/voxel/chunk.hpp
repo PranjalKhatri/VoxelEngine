@@ -39,8 +39,8 @@ class Voxel {
     Type type_;
 };
 
-static constexpr int    VoxelTypeToTexture(const Voxel::Type& voxelType);
-static constexpr size_t MeshToIndex(gfx::rtypes::MeshType type) {
+inline constexpr int    VoxelTypeToTexture(const Voxel::Type& voxelType);
+inline constexpr size_t MeshToIndex(gfx::rtypes::MeshType type) {
     return static_cast<size_t>(type);
 }
 
@@ -142,50 +142,50 @@ class Chunk {
     std::array<std::shared_ptr<ChunkRenderable>, kNumMeshes> meshes_{};
 };
 // 6 vertices * (3 pos + 2 uv) = 30 floats per face
-static constexpr float kTopFace[] = {
+inline constexpr float kTopFace[] = {
     // pos              // uv
     0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1,
 
     1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0,
 };
 
-static constexpr float kBottomFace[] = {
+inline constexpr float kBottomFace[] = {
     0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0,
 
     1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
 };
 
-static constexpr float kNorthFace[] = {
+inline constexpr float kNorthFace[] = {
     // -Z
     1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 1,
 
     0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0,
 };
 
-static constexpr float kSouthFace[] = {
+inline constexpr float kSouthFace[] = {
     // +Z
     0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1,
 
     1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0,
 };
 
-static constexpr float kWestFace[] = {
+inline constexpr float kWestFace[] = {
     // -X
     0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1,
 
     0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0,
 };
 
-static constexpr float kEastFace[] = {
+inline constexpr float kEastFace[] = {
     // +X
     1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1,
 
     1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0,
 };
 
-static constexpr const float*
+inline constexpr const float*
     kFaceTable[static_cast<size_t>(direction::kCount)] = {
         kTopFace, kBottomFace, kNorthFace, kSouthFace, kWestFace, kEastFace,
 };
-static constexpr const float kNormalTable[] = {0, 1, 2, 3, 4, 5};
+inline constexpr const float kNormalTable[] = {0, 1, 2, 3, 4, 5};
 };  // namespace pop::voxel

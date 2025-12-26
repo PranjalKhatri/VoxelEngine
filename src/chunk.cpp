@@ -120,7 +120,7 @@ Voxel::Type Chunk::GetVoxelAtCoord(const glm::ivec3 &coord) const {
     return voxel_data_[Index(coord.x, coord.y, coord.z)].GetType();
 }
 
-constexpr inline int Chunk::Index(int x, int y, int z) {
+constexpr int Chunk::Index(int x, int y, int z) {
     return x + kSize_x * (y + kSize_y * z);
 }
 
@@ -282,7 +282,7 @@ void Chunk::GenerateVoxel(int x, int y, int z, Voxel::Type vtype,
     if (ShouldDrawFace(vtype, GetVoxelType(x + 1, y, z)))
         emit_face(direction::kEast);
 }
-inline Voxel::Type Chunk::GetLocalVoxelType(int x, int y, int z) const {
+Voxel::Type Chunk::GetLocalVoxelType(int x, int y, int z) const {
     assert(x < kSize_x && y < kSize_y && z < kSize_z &&
            "GetLocalVoxelType out of bounds");
     return voxel_data_[Index(x, y, z)].GetType();
