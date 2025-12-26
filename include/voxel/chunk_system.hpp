@@ -71,7 +71,8 @@ class ChunkManager {
     void ProcessCommands();
     void ProcessDirtyChunks(core::Engine& engine);
     void ProcessNewChunks(core::Engine& engine);
-    void UploadChunkToEngine(const ChunkCoord& coord, core::Engine& engine);
+    void UploadChunkToEngine(const ChunkCoord& coord, core::Engine& engine,
+                             bool Update = false);
     // WARN:Doesn't erase from the loaded_chunks
     void UnLoadChunk(const ChunkCoord& chunkCoord, core::Engine& engine);
     // Helper to get raw ptr from the map
