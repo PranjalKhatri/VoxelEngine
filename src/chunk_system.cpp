@@ -2,12 +2,14 @@
 #include <iostream>
 #include <memory>
 #include <thread>
+#include "glm/geometric.hpp"
 #include "graphics/camera.hpp"
 #include "core/engine.hpp"
 #include "glm/fwd.hpp"
 #include "graphics/rendertypes.hpp"
 #include "voxel/chunk.hpp"
 #include "voxel/directions.hpp"
+#include "util/ray.hpp"
 
 namespace pop::voxel {
 ChunkManager::ChunkManager(const gfx::FlyCam* player_cam_)
@@ -99,19 +101,65 @@ void ChunkManager::UnLoadChunk(const ChunkCoord& chunkCoord,
     }
 }
 
+void ChunkManager::MarkDirty(const ChunkCoord& coord, bool markAll,
+                             const glm::ivec3& blockUpdated) {
+    constexpr ChunkCoord neighbors[] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+    if (markAll) {
+        dirty_chunks_.insert(coord);
+        for (auto& off : neighbors) {
+            ChunkCoord nPos = coord + off;
+            dirty_chunks_.insert(nPos);
+        }
+        return;
+    } else {
+        if (blockUpdated.z == 0) dirty_chunks_.insert(coord + neighbors[1]);
+        if (blockUpdated.z == Chunk::kSize_z - 1)
+            dirty_chunks_.insert(coord + neighbors[0]);
+        if (blockUpdated.x == 0) dirty_chunks_.insert(coord + neighbors[2]);
+        if (blockUpdated.x == Chunk::kSize_x - 1)
+            dirty_chunks_.insert(coord + neighbors[3]);
+    }
+}
+void ChunkManager::ProcessDirtyChunks(core::Engine& engine) {
+    for (auto it = dirty_chunks_.begin(); it != dirty_chunks_.end();) {
+        auto dirtyCoord = *it;
+        if (loaded_chunks_.find(dirtyCoord) == loaded_chunks_.end() ||
+            new_chunks_.count(dirtyCoord)) {
+            // removed from loaded chunks, will be rebuild when loaded again
+            // Also if in new chunk, this chunk hasn't been meshed so ignore
+        } else {
+            UnLoadChunk(dirtyCoord, engine);
+            LinkChunkNeighbors(dirtyCoord);
+            loaded_chunks_[dirtyCoord]->ReGenerate();
+            UploadChunkToEngine(dirtyCoord, engine);
+        }
+        it = dirty_chunks_.erase(it);
+    }
+}
+void ChunkManager::ProcessNewChunks(core::Engine& engine) {
+    for (auto it = new_chunks_.begin(); it != new_chunks_.end();) {
+        if (loaded_chunks_.count(*it)) LinkAndMesh(*it, engine);
+        it = new_chunks_.erase(it);
+    }
+}
 void ChunkManager::Run(core::Engine& engine) {
     std::cout << "Starting ChunkSystem" << std::endl;
     InitialLoad(engine);
     ChunkCoord lastChunk = WorldToChunkCoord(player_cam_->GetPosition());
     while (engine.IsRunning()) {
         auto currentChunk = WorldToChunkCoord(player_cam_->GetPosition());
+
+        // ProcessCommands();
+        ProcessDirtyChunks(engine);
+        ProcessNewChunks(engine);
+
         if (currentChunk == lastChunk) {
             std::this_thread::sleep_for(std::chrono::milliseconds(30));
             continue;
         }
         lastChunk = currentChunk;
-        std::unordered_set<ChunkCoord, ChunkCoordHash> dirtyChunks,
-            chunksToUnload, newChunks;
+        std::unordered_set<ChunkCoord, ChunkCoordHash>
+            chunksToUnload;  // ,dirtyChunks
         for (const auto& i : loaded_chunks_) chunksToUnload.insert(i.first);
 
         for (int x = -RenderDistance; x <= RenderDistance; x++) {
@@ -120,20 +168,9 @@ void ChunkManager::Run(core::Engine& engine) {
                 if (chunksToUnload.count(nextChunk)) {
                     chunksToUnload.erase(nextChunk);
                 } else {
-                    newChunks.insert(nextChunk);
+                    new_chunks_.insert(nextChunk);
                     loaded_chunks_[nextChunk] = GenerateChunk(nextChunk);
-
-                    dirtyChunks.insert(nextChunk);
-                    // Its neighbors also need to update their borders
-                    ChunkCoord neighbors[] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
-                    for (auto& off : neighbors) {
-                        ChunkCoord nPos = nextChunk + off;
-                        // Only dirty the neighbor if it actually exists in our
-                        // system
-                        if (loaded_chunks_.count(nPos)) {
-                            dirtyChunks.insert(nPos);
-                        }
-                    }
+                    MarkDirty(nextChunk, true);
                 }
             }
         }
@@ -144,19 +181,19 @@ void ChunkManager::Run(core::Engine& engine) {
             loaded_chunks_.erase(i);
         }
         // regenerate dirty chunk and upload again
-        for (const auto& dirtyCoord : dirtyChunks) {
-            if (loaded_chunks_.find(dirtyCoord) == loaded_chunks_.end())
-                continue;
-
-            if (newChunks.find(dirtyCoord) == newChunks.end()) {
-                UnLoadChunk(dirtyCoord, engine);
-                LinkChunkNeighbors(dirtyCoord);
-                loaded_chunks_[dirtyCoord]->ReGenerate();
-                UploadChunkToEngine(dirtyCoord, engine);
-            } else {
-                LinkAndMesh(dirtyCoord, engine);
-            }
-        }
+        // for (const auto& dirtyCoord : dirtyChunks) {
+        //     if (loaded_chunks_.find(dirtyCoord) == loaded_chunks_.end())
+        //         continue;
+        //
+        //     if (newChunks.find(dirtyCoord) == newChunks.end()) {
+        //         UnLoadChunk(dirtyCoord, engine);
+        //         LinkChunkNeighbors(dirtyCoord);
+        //         loaded_chunks_[dirtyCoord]->ReGenerate();
+        //         UploadChunkToEngine(dirtyCoord, engine);
+        //     } else {
+        //         LinkAndMesh(dirtyCoord, engine);
+        //     }
+        // }
     }
     std::cout << "ChunkManager stopped!\n";
 }
@@ -187,4 +224,34 @@ void ChunkManager::InitialLoad(core::Engine& engine) {
     }
 }
 
+void ChunkManager::AddChunkBlockCmd(const ChunkBlockCmd& cmd) {
+    chunkCmdQ.push(cmd);
+}
+void ChunkManager::BreakBlock(glm::vec3 position, glm::vec3 dir) {
+    util::Ray       ray(position, glm::normalize(dir));
+    constexpr float kStepSize = 0.1f;
+    constexpr int   kMaxSteps = 40;  // 4.0 blocks reach
+
+    for (int i = 0; i < kMaxSteps; i++) {
+        auto hitPoint = ray.At(i * kStepSize);
+
+        glm::ivec3 blockPos = {static_cast<int>(std::floor(hitPoint.x)),
+                               static_cast<int>(std::floor(hitPoint.y)),
+                               static_cast<int>(std::floor(hitPoint.z))};
+
+        auto chunkCoord = WorldToChunkCoord(blockPos);
+        auto localCoord = WorldToChunkLocal(blockPos);
+
+        auto it = loaded_chunks_.find(chunkCoord);
+        if (it != loaded_chunks_.end()) {
+            auto&       chunk        = it->second;
+            Voxel::Type voxelHitType = chunk->GetVoxelAtCoord(localCoord);
+            if (Voxel::IsSolid(voxelHitType)) {
+                chunk->BreakBlock(localCoord);
+                // MarkDirtyNeighbors(chunkCoord, localCoord);
+                return;
+            }
+        }
+    }
+}
 };  // namespace pop::voxel

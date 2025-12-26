@@ -1,7 +1,10 @@
 #pragma once
 
+#include "glm/common.hpp"
 #include "graphics/camera.hpp"
 #include "core/engine.hpp"
+#include "util/math.hpp"
+#include "util/safe_queue.hpp"
 #include "voxel/chunk.hpp"
 #include "gl/gl_types.hpp"
 #include "glm/fwd.hpp"
@@ -25,11 +28,16 @@ struct ChunkCoord {
     }
 };
 
-inline ChunkCoord WorldToChunkCoord(const glm::ivec3& worldPoint) {
+inline constexpr ChunkCoord WorldToChunkCoord(const glm::ivec3& worldPoint) {
     return {static_cast<int>(
                 std::floor(static_cast<float>(worldPoint.x) / Chunk::kSize_x)),
             static_cast<int>(
                 std::floor(static_cast<float>(worldPoint.z) / Chunk::kSize_z))};
+}
+inline constexpr glm::ivec3 WorldToChunkLocal(const glm::ivec3& worldPoint) {
+    return {util::PositiveMod(worldPoint.x, Chunk::kSize_x),
+            util::PositiveMod(worldPoint.y, Chunk::kSize_y),
+            util::PositiveMod(worldPoint.z, Chunk::kSize_z)};
 }
 inline glm::ivec3 ChunkToOffset(const ChunkCoord& coord) {
     return {coord.x * Chunk::kSize_x, 0, coord.z * Chunk::kSize_z};
@@ -43,16 +51,26 @@ struct ChunkCoordHash {
 };
 class ChunkManager {
    public:
+    struct ChunkBlockCmd {
+        glm::vec3   position;
+        glm::vec3   direction;
+        Voxel::Type voxelToSet;
+    };
+    static constexpr int RenderDistance = 8;
+
     ChunkManager(const gfx::FlyCam* player_cam_);
     ~ChunkManager() = default;
 
     void Run(core::Engine& engine);
     void SetShader(gfx::rtypes::MeshType meshType, gfx::ShaderHandle handle);
     void SetTexture(std::shared_ptr<gfx::rtypes::TextureBinding> texture);
-
-    static constexpr int RenderDistance = 8;
+    void AddChunkBlockCmd(const ChunkBlockCmd& cmd);
 
    private:
+    void BreakBlock(glm::vec3 position, glm::vec3 dir);
+    void ProcessCommands();
+    void ProcessDirtyChunks(core::Engine& engine);
+    void ProcessNewChunks(core::Engine& engine);
     void UploadChunkToEngine(const ChunkCoord& coord, core::Engine& engine);
     // WARN:Doesn't erase from the loaded_chunks
     void UnLoadChunk(const ChunkCoord& chunkCoord, core::Engine& engine);
@@ -63,11 +81,15 @@ class ChunkManager {
 
     void LinkChunkNeighbors(const ChunkCoord& coord);
     void LinkAndMesh(const ChunkCoord& coord, core::Engine& engine);
+    void MarkDirty(const ChunkCoord& coord, bool markAll = true,
+                   const glm::ivec3& blockUpdated = {0, 0, 0});
 
     void InitialLoad(core::Engine& engine);
     bool IsChunkLoaded(const ChunkCoord& chunkCoord);
 
    private:
+    util::CmdQueue<ChunkBlockCmd>                  chunkCmdQ{};
+    std::unordered_set<ChunkCoord, ChunkCoordHash> dirty_chunks_, new_chunks_;
     std::unordered_map<ChunkCoord, std::unique_ptr<Chunk>, ChunkCoordHash>
                                                  loaded_chunks_;
     std::shared_ptr<gfx::rtypes::TextureBinding> tex_;
