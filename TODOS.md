@@ -5,3 +5,4 @@
 4. Chunk Optimizations,Voxel Optimizations.
 5. Create some sort of Resouce manager abstraction for managing shaders and texture in the engine.
 6. If engine stops working or crashes after initial loading, try changing the ChunkManager::Run logic first: Remove linkNeighbor, or just recreate dirty chunks or copy paste the initial load
+7. Maintain some chunk state so that a new chunk if appeared in dirty is handled gracefully
