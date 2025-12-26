@@ -47,6 +47,8 @@ void FlyCam::ProcessMouseMovement(float xpos, float ypos) {
 
     yaw_   += xoffset;
     pitch_ += yoffset;
+    if (pitch_ > 89.0f) pitch_ = 89.0f;
+    if (pitch_ < -89.0f) pitch_ = -89.0f;
 
     updateCameraVectors();
 }
