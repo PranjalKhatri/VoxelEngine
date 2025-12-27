@@ -17,18 +17,13 @@ uniform sampler2D textureAtlas;
 void main()
 {
     vec4 Biomecolor = vec4(1.0);
-    float goTop = 0.0;
-    if (abs(BlockType - 3.0) < 0.01 && abs(Normal.y) > 0.5) {
-        Biomecolor = vec4(0.0, 1.0, 0.1, 1.0);
-        goTop = 1.0;
-    }
     float totalTiles = 5.0;
     float tileHeight = 1.0 / totalTiles;
 
     float localX = fract(TexCoord.x);
     float localY = fract(TexCoord.y);
 
-    float vOffset = (goTop + BlockType) * tileHeight;
+    float vOffset = BlockType * tileHeight;
     vec2 finalUV = vec2(localX, vOffset + (localY * tileHeight));
 
     vec4 texColor = texture(textureAtlas, finalUV) * Biomecolor;
