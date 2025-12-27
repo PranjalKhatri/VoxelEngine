@@ -14,7 +14,7 @@
 #include "util/safe_queue.hpp"
 
 namespace pop::core {
-enum class RenderCmdType { Add, Remove };
+enum class RenderCmdType { kAdd, kRemove, kUpdate };
 
 struct RenderCmd {
     RenderCmdType               type;
@@ -34,6 +34,7 @@ class Engine {
     void SetMainCamera(std::shared_ptr<gfx::Camera> camera);
 
     void AddRenderable(std::shared_ptr<Renderable> renderable);
+    void UpdateRenderable(std::shared_ptr<Renderable> renderable);
     void RemoveRenderable(std::shared_ptr<Renderable> renderable);
 
     void AddShaderProgram(std::unique_ptr<gfx::ShaderProgram> prog);

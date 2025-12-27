@@ -158,8 +158,7 @@ void Engine::Render() {
     glDisable(GL_BLEND);
 }
 
-void Engine::FramebufferSizeCallback(GLFWwindow *window, int width,
-                                     int height) {
+void Engine::FramebufferSizeCallback(GLFWwindow *, int width, int height) {
     glViewport(0, 0, width, height);
 }
 void Engine::UpdateDeltaTime() {
