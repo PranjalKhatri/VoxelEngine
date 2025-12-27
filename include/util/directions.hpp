@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-namespace pop {
+namespace pop::util {
 enum class direction : uint8_t {
     kTop    = 0,
     kBottom = 1,
