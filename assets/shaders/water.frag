@@ -13,7 +13,7 @@ uniform Light SunLight;
 
 void main()
 {
-    vec4 waterColor = vec4(0.0, 0.45, 0.65, 0.25);
+    vec4 waterColor = vec4(0.0, 0.45, 0.65, 0.45);
 
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(-SunLight.direction);
