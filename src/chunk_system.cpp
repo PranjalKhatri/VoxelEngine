@@ -12,8 +12,8 @@
 #include "util/ray.hpp"
 
 namespace pop::voxel {
-ChunkManager::ChunkManager(const gfx::FlyCam* player_cam_)
-    : player_cam_{player_cam_} {
+ChunkManager::ChunkManager(const gfx::FlyCam* playerCam)
+    : player_cam_{playerCam} {
     std::cout << "Manager constructed!!\n";
 }
 

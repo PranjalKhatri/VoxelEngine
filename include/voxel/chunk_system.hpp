@@ -58,7 +58,7 @@ class ChunkManager {
     };
     static constexpr int RenderDistance = 8;
 
-    ChunkManager(const gfx::FlyCam* player_cam_);
+    ChunkManager(const gfx::FlyCam* playerCam);
     ~ChunkManager() = default;
 
     void Run(core::Engine& engine);
