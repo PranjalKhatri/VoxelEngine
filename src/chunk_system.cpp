@@ -119,9 +119,9 @@ void ChunkManager::MarkDirty(const ChunkCoord& coord, bool markAll,
         if (blockUpdated.z == 0) dirty_chunks_.insert(coord + neighbors[1]);
         if (blockUpdated.z == Chunk::kSize_z - 1)
             dirty_chunks_.insert(coord + neighbors[0]);
-        if (blockUpdated.x == 0) dirty_chunks_.insert(coord + neighbors[2]);
+        if (blockUpdated.x == 0) dirty_chunks_.insert(coord + neighbors[3]);
         if (blockUpdated.x == Chunk::kSize_x - 1)
-            dirty_chunks_.insert(coord + neighbors[3]);
+            dirty_chunks_.insert(coord + neighbors[2]);
     }
 }
 void ChunkManager::ProcessDirtyChunks(core::Engine& engine) {
