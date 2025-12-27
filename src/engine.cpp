@@ -1,3 +1,4 @@
+#include "block/block_loader.hpp"
 #include "glad/glad.h"
 #include "core/engine.hpp"
 #include "graphics/camera.hpp"
@@ -14,6 +15,7 @@ Engine::Engine(glm::mat4 projectionMatrix, GLFWwindow *window)
       window_(window),
       solid_renderables_{},
       projection_matrix_{projectionMatrix} {
+    block::RegisterAllBlocks();
     SetupCallbacks();
     is_running_ = true;
 }
