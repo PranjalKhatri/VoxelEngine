@@ -1,45 +1,19 @@
 #pragma once
 
-#include "directions.hpp"
+#include "util/directions.hpp"
 #include "gl/gl_types.hpp"
-#include "glm/vec3.hpp"
 #include "glm/fwd.hpp"
+#include "glm/vec3.hpp"
 #include "core/renderable.hpp"
 #include "graphics/rendertypes.hpp"
 #include "graphics/shader.hpp"
 #include "graphics/vertex_buffers.hpp"
+#include "block/block_ids.hpp"
 #include <array>
-#include <cstdint>
 #include <memory>
 #include <vector>
 namespace pop::voxel {
 
-class Voxel {
-   public:
-    enum class Type : uint8_t {
-        kAir,
-        kGrass,
-        kDirt,
-        kStone,
-        kSand,
-        kTreeBark,
-        kTreeLeaves,
-        kWater
-    };
-
-    Voxel(Type type = Type::kAir);
-
-    static bool IsSolid(Type type);
-    bool        IsSolid() const { return IsSolid(type_); }
-    Type        GetType() const;
-
-    void SetType(Type vtype);
-
-   private:
-    Type type_;
-};
-
-inline constexpr int    VoxelTypeToTexture(const Voxel::Type& voxelType);
 inline constexpr size_t MeshToIndex(gfx::rtypes::MeshType type) {
     return static_cast<size_t>(type);
 }
@@ -48,7 +22,7 @@ struct FaceGeometry {
     static constexpr int kStride      = 5;
     static constexpr int kVertexCount = 6;
 
-    static constexpr const float* GetFace(pop::direction faceDirection);
+    static constexpr const float* GetFace(util::direction faceDirection);
 };
 class ChunkRenderable : public Renderable {
    public:
@@ -106,10 +80,10 @@ class Chunk {
     Chunk(glm::ivec3 chunkOffset);
     ~Chunk() = default;
 
-    void        BreakBlock(const glm::ivec3& coord);
-    void        AddBlock(const glm::ivec3& coord, Voxel::Type vtype);
-    Voxel::Type GetVoxelAtCoord(const glm::ivec3& coord) const;
-    void        GenerateMesh();
+    void           BreakBlock(const glm::ivec3& coord);
+    void           AddBlock(const glm::ivec3& coord, block::BlockID vtype);
+    block::BlockID GetBlockAtCoord(const glm::ivec3& coord) const;
+    void           GenerateMesh();
     // call to regenerate the mesh on existing chunkrenderable
     void ReGenerate();
     void SetNeighbors(const NeighborArray& neighbors) {
@@ -122,21 +96,21 @@ class Chunk {
         gfx::rtypes::MeshType mtype) const;
 
    private:
-    void GenerateVoxel(int x, int y, int z, Voxel::Type vtype,
+    void GenerateBlock(int x, int y, int z, block::BlockID block,
                        const std::shared_ptr<ChunkRenderable>& mesh);
     void GenerateRenderable();
     void PopulateFromHeightMap();
-    bool ShouldDrawFace(Voxel::Type current, Voxel::Type neighbor) const;
+    bool ShouldDrawFace(block::BlockID current, block::BlockID neighbor) const;
 
-    Voxel::Type GetLocalVoxelType(int x, int y, int z) const;
-    Voxel::Type GetVoxelType(int x, int y, int z) const;
+    block::BlockID GetLocalBlockId(int x, int y, int z) const;
+    block::BlockID GetBlockId(int x, int y, int z) const;
 
    private:
     glm::ivec3 chunk_offset_{};
 
-    std::unique_ptr<Voxel[]> voxel_data_{};
-    NeighborArray            neighbors_{};
-    void                     SetVoxelType(int index, Voxel::Type vtype);
+    std::unique_ptr<block::BlockID[]> voxel_data_{};
+    NeighborArray                     neighbors_{};
+    void SetBlockType(int index, block::BlockID bid);
 
     std::array<gfx::ShaderHandle, kNumMeshes>                shader_ids_{};
     std::array<std::shared_ptr<ChunkRenderable>, kNumMeshes> meshes_{};
@@ -184,7 +158,7 @@ inline constexpr float kEastFace[] = {
 };
 
 inline constexpr const float*
-    kFaceTable[static_cast<size_t>(direction::kCount)] = {
+    kFaceTable[static_cast<size_t>(util::direction::kCount)] = {
         kTopFace, kBottomFace, kNorthFace, kSouthFace, kWestFace, kEastFace,
 };
 inline constexpr const float kNormalTable[] = {0, 1, 2, 3, 4, 5};

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "block/block_ids.hpp"
 #include "glm/common.hpp"
 #include "graphics/camera.hpp"
 #include "core/engine.hpp"
@@ -52,9 +53,9 @@ struct ChunkCoordHash {
 class ChunkManager {
    public:
     struct ChunkBlockCmd {
-        glm::vec3   position;
-        glm::vec3   direction;
-        Voxel::Type voxelToSet;
+        glm::vec3      position;
+        glm::vec3      direction;
+        block::BlockID blockIdToSet;
     };
     static constexpr int RenderDistance = 8;
 

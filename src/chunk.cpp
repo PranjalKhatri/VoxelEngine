@@ -1,5 +1,7 @@
 #include "voxel/chunk.hpp"
-#include "voxel/directions.hpp"
+#include "block/block_ids.hpp"
+#include "block/block_registry.hpp"
+#include "util/directions.hpp"
 #include "gl/gl_types.hpp"
 #include "glad/glad.h"
 #include "graphics/rendertypes.hpp"
@@ -10,7 +12,7 @@
 #include <memory>
 
 namespace pop::voxel {
-
+using util::direction;
 // ===============Chunk Renderable==============
 ChunkRenderable::ChunkRenderable(gfx::ShaderHandle shaderId, bool isTransparent)
     : is_transparent_(isTransparent),
@@ -82,42 +84,26 @@ void ChunkRenderable::Draw(gfx::ShaderProgram *const shader_program) {
     glDrawArrays(GL_TRIANGLES, 0, num_vertices_);
 }
 
-// ==============VOXEL==============
-Voxel::Voxel(Voxel::Type vtype) : type_(vtype) {}
-bool Voxel::IsSolid(Type type) {
-    return type != Type::kAir && type != Type::kWater;
-}
-
-Voxel::Type Voxel::GetType() const { return type_; }
-
-void Voxel::SetType(Voxel::Type vtype) { type_ = vtype; }
-
-constexpr int VoxelTypeToTexture(const Voxel::Type &voxelType) {
-    switch (voxelType) {
-        case Voxel::Type::kGrass:
-            return 3;
-        case Voxel::Type::kDirt:
-            return 4;
-        case Voxel::Type::kStone:
-            return 0;
-        case Voxel::Type::kSand:
-            return 1;
-        default:
-            return 0;
-    }
+inline int BlockIdToTexture(block::BlockID blockId) {
+    if (blockId == block::IDs::GRASS) return 3;
+    if (blockId == block::IDs::DIRT) return 4;
+    if (blockId == block::IDs::STONE) return 0;
+    if (blockId == block::IDs::SAND) return 1;
+    return 0;
 }
 //==============FaceGeometry==============
-constexpr const float *FaceGeometry::GetFace(pop::direction faceDirection) {
+constexpr const float *FaceGeometry::GetFace(direction faceDirection) {
     return kFaceTable[static_cast<int>(faceDirection)];
 }
 // ==============CHUNK===============
 Chunk::Chunk(glm::ivec3 chunkOffset) : chunk_offset_(chunkOffset) {
-    voxel_data_ = std::make_unique<Voxel[]>(kSize_x * kSize_y * kSize_z);
+    voxel_data_ =
+        std::make_unique<block::BlockID[]>(kSize_x * kSize_y * kSize_z);
     PopulateFromHeightMap();
 }
 
-Voxel::Type Chunk::GetVoxelAtCoord(const glm::ivec3 &coord) const {
-    return voxel_data_[Index(coord.x, coord.y, coord.z)].GetType();
+block::BlockID Chunk::GetBlockAtCoord(const glm::ivec3 &coord) const {
+    return voxel_data_[Index(coord.x, coord.y, coord.z)];
 }
 
 constexpr int Chunk::Index(int x, int y, int z) {
@@ -125,14 +111,14 @@ constexpr int Chunk::Index(int x, int y, int z) {
 }
 
 void Chunk::BreakBlock(const glm::ivec3 &coord) {
-    SetVoxelType(Index(coord.x, coord.y, coord.z), Voxel::Type::kAir);
+    SetBlockType(Index(coord.x, coord.y, coord.z), block::IDs::AIR);
 }
 
-void Chunk::AddBlock(const glm::ivec3 &coord, Voxel::Type vtype) {
-    SetVoxelType(Index(coord.x, coord.y, coord.z), vtype);
+void Chunk::AddBlock(const glm::ivec3 &coord, block::BlockID bid) {
+    SetBlockType(Index(coord.x, coord.y, coord.z), bid);
 }
-void Chunk::SetVoxelType(int index, Voxel::Type vtype) {
-    voxel_data_[index].SetType(vtype);
+void Chunk::SetBlockType(int index, block::BlockID bid) {
+    voxel_data_[index] = bid;
 }
 void Chunk::SetShader(gfx::rtypes::MeshType shaderMeshType,
                       gfx::ShaderHandle     shaderHandle) {
@@ -161,43 +147,44 @@ void Chunk::ReGenerate() {
 }
 void Chunk::PopulateFromHeightMap() {
     auto &instance = terrain::TerrainGenerator::GetInstance();
-    auto  SetBlock = [&](int x, int y, int z, Voxel::Type vtype) {
-        voxel_data_[Index(x, y, z)].SetType(vtype);
-    };
+    // auto  SetBlock = [&](int x, int y, int z, Voxel::Type vtype) {
+    //     voxel_data_[Index(x, y, z)].SetType(vtype);
+    // };
     for (int x = 0; x < kSize_x; x++) {
         for (int z = 0; z < kSize_z; z++) {
             bool surfaceFound = false;
             for (int y = kSize_y - 1; y >= 0; y--) {
+                auto  index   = Index(x, y, z);
                 float density = instance.GetDensity(chunk_offset_.x + x,
                                                     chunk_offset_.y + y,
                                                     chunk_offset_.z + z);
                 if (density > 0) {
                     if (!surfaceFound) {
                         if (y >= kWaterBaseline - 1) {
-                            SetBlock(
-                                x, y, z,
-                                Voxel::Type::kGrass);  // The very top layer
+                            SetBlockType(
+                                index,
+                                block::IDs::GRASS);  // The very top layer
                         } else {
-                            SetBlock(x, y, z,
-                                     Voxel::Type::kSand);  // Underwater floor
+                            SetBlockType(index,
+                                         block::IDs::SAND);  // Underwater floor
                         }
                         surfaceFound = true;
                     } else if (y > (kWaterBaseline - 4) &&
                                y < (kWaterBaseline)) {
                         // Just a little dirt/sand under the surface before
                         // stone starts
-                        SetBlock(x, y, z, Voxel::Type::kDirt);
+                        SetBlockType(index, block::IDs::DIRT);
                     } else {
-                        SetBlock(x, y, z,
-                                 Voxel::Type::kStone);  // Deep underground
+                        SetBlockType(index,
+                                     block::IDs::STONE);  // Deep underground
                     }
                 } else {
                     if (y <= kWaterBaseline) {
-                        SetBlock(x, y, z,
-                                 Voxel::Type::kWater);  // Fill empty gaps below
-                                                        // sea level
+                        SetBlockType(index,
+                                     block::IDs::WATER);  // Fill empty gaps
+                                                          // below sea level
                     } else {
-                        SetBlock(x, y, z, Voxel::Type::kAir);
+                        SetBlockType(index, block::IDs::AIR);
                     }
                 }
             }
@@ -209,15 +196,15 @@ void Chunk::GenerateRenderable() {
     for (int x = 0; x < kSize_x; x++) {
         for (int y = 0; y < kSize_y; y++) {
             for (int z = 0; z < kSize_z; z++) {
-                auto index = Index(x, y, z);
-                auto vtype = voxel_data_[index].GetType();
-                if (vtype == Voxel::Type::kAir) continue;
-                if (vtype == Voxel::Type::kWater)
-                    GenerateVoxel(x, y, z, vtype,
+                auto index   = Index(x, y, z);
+                auto blockId = voxel_data_[index];
+                if (blockId == block::IDs::AIR) continue;
+                if (blockId == block::IDs::WATER)
+                    GenerateBlock(x, y, z, blockId,
                                   meshes_[MeshToIndex(
                                       gfx::rtypes::MeshType::kWaterMesh)]);
                 else
-                    GenerateVoxel(x, y, z, vtype,
+                    GenerateBlock(x, y, z, blockId,
                                   meshes_[MeshToIndex(
                                       gfx::rtypes::MeshType::kSolidMesh)]);
             }
@@ -236,26 +223,43 @@ void Chunk::GenerateRenderable() {
         mesh->SetChunkOffset(chunk_offset_);
     }
 }
-bool Chunk::ShouldDrawFace(Voxel::Type current, Voxel::Type neighbor) const {
-    if (neighbor == Voxel::Type::kAir) return true;
+bool Chunk::ShouldDrawFace(block::BlockID current_id,
+                           block::BlockID neighbor_id) const {
+    // Identical blocks (unless translucent) usually don't draw
+    // internal faces
+    if (current_id == neighbor_id) return false;
 
-    if (current == Voxel::Type::kWater) {
-        // Water ONLY draws against Air.
-        // It does NOT draw against other water (prevents internal faces)
-        // It does NOT draw against solids (solids draw their own face)
-        return false;
-    } else {
-        // Solid draws against Air (standard) and Water (transparency)
-        return (neighbor == Voxel::Type::kWater);
+    const auto                  &reg      = block::BlockRegistry::Get();
+    [[maybe_unused]] const auto &current  = reg.GetBlock(current_id);
+    const auto                  &neighbor = reg.GetBlock(neighbor_id);
+
+    // Air doesn't have faces)
+    if (current_id == block::IDs::AIR) return false;
+
+    // If the neighbor is Air (non-solid/translucent), always draw.
+    if (!neighbor.IsSolid()) return true;
+
+    // If the neighbor is translucent (like Water or Glass),
+    // we should draw our face so it's visible through the neighbor.
+    if (neighbor.IsTranslucent()) {
+        // Special case: Don't draw water-to-water faces (already handled by id
+        // check above)
+        return true;
     }
+
+    //  Neighbor is a solid, opaque block. Hide the face.
+    return false;
 }
-void Chunk::GenerateVoxel(int x, int y, int z, Voxel::Type vtype,
+void Chunk::GenerateBlock(int x, int y, int z, block::BlockID blockId,
                           const std::shared_ptr<ChunkRenderable> &mesh) {
     constexpr int floats_per_vertex = 5;
     constexpr int floats_per_face   = floats_per_vertex * 6;
 
-    auto &verts     = mesh->VertexData();
-    auto  emit_face = [&](direction dir) {
+    const auto &reg   = block::BlockRegistry::Get();
+    const auto &block = reg.GetBlock(blockId);
+    auto       &verts = mesh->VertexData();
+
+    auto emit_face = [&](direction dir) {
         const float *face = FaceGeometry::GetFace(dir);
 
         for (int i = 0; i < floats_per_face; i += 5) {
@@ -265,33 +269,32 @@ void Chunk::GenerateVoxel(int x, int y, int z, Voxel::Type vtype,
             verts.push_back(face[i + 3]);      // u
             verts.push_back(face[i + 4]);      // v
             verts.push_back(kNormalTable[static_cast<int>(dir)]);
-            verts.push_back(
-                VoxelTypeToTexture(voxel_data_[Index(x, y, z)].GetType()));
+            verts.push_back(block.GetTextureCode(dir));
         }
     };
-    if (ShouldDrawFace(vtype, GetVoxelType(x, y + 1, z)))
+    if (ShouldDrawFace(blockId, GetBlockId(x, y + 1, z)))
         emit_face(direction::kTop);
-    if (ShouldDrawFace(vtype, GetVoxelType(x, y - 1, z)))
+    if (ShouldDrawFace(blockId, GetBlockId(x, y - 1, z)))
         emit_face(direction::kBottom);
-    if (ShouldDrawFace(vtype, GetVoxelType(x, y, z - 1)))
+    if (ShouldDrawFace(blockId, GetBlockId(x, y, z - 1)))
         emit_face(direction::kNorth);
-    if (ShouldDrawFace(vtype, GetVoxelType(x, y, z + 1)))
+    if (ShouldDrawFace(blockId, GetBlockId(x, y, z + 1)))
         emit_face(direction::kSouth);
-    if (ShouldDrawFace(vtype, GetVoxelType(x - 1, y, z)))
+    if (ShouldDrawFace(blockId, GetBlockId(x - 1, y, z)))
         emit_face(direction::kWest);
-    if (ShouldDrawFace(vtype, GetVoxelType(x + 1, y, z)))
+    if (ShouldDrawFace(blockId, GetBlockId(x + 1, y, z)))
         emit_face(direction::kEast);
 }
-Voxel::Type Chunk::GetLocalVoxelType(int x, int y, int z) const {
+block::BlockID Chunk::GetLocalBlockId(int x, int y, int z) const {
     assert(x < kSize_x && y < kSize_y && z < kSize_z &&
            "GetLocalVoxelType out of bounds");
-    return voxel_data_[Index(x, y, z)].GetType();
+    return voxel_data_[Index(x, y, z)];
 }
-Voxel::Type Chunk::GetVoxelType(int x, int y, int z) const {
+block::BlockID Chunk::GetBlockId(int x, int y, int z) const {
     // 1. Local Check
     if (x >= 0 && x < kSize_x && y >= 0 && y < kSize_y && z >= 0 &&
         z < kSize_z) {
-        return GetLocalVoxelType(x, y, z);
+        return GetLocalBlockId(x, y, z);
     }
 
     // 2. Neighbor Check (Top, Bottom, North, South, West, East)
@@ -312,7 +315,6 @@ Voxel::Type Chunk::GetVoxelType(int x, int y, int z) const {
         nx       = 0;
     }
 
-    return neighbor ? neighbor->GetLocalVoxelType(nx, ny, nz)
-                    : Voxel::Type::kAir;
+    return neighbor ? neighbor->GetLocalBlockId(nx, ny, nz) : block::IDs::AIR;
 }
 };  // namespace pop::voxel

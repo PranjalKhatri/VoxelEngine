@@ -2,16 +2,18 @@
 #include <iostream>
 #include <memory>
 #include <thread>
+#include "block/block_registry.hpp"
 #include "glm/geometric.hpp"
 #include "graphics/camera.hpp"
 #include "core/engine.hpp"
 #include "glm/fwd.hpp"
 #include "graphics/rendertypes.hpp"
 #include "voxel/chunk.hpp"
-#include "voxel/directions.hpp"
+#include "util/directions.hpp"
 #include "util/ray.hpp"
 
 namespace pop::voxel {
+using util::direction;
 ChunkManager::ChunkManager(const gfx::FlyCam* playerCam)
     : player_cam_{playerCam} {
     std::cout << "Manager constructed!!\n";
@@ -150,7 +152,7 @@ void ChunkManager::ProcessCommands() {
     while (!chunkCmdQ.empty()) {
         auto cmd = chunkCmdQ.try_pop();
         if (!cmd) return;
-        if (cmd->voxelToSet == Voxel::Type::kAir)
+        if (cmd->blockIdToSet == block::IDs::AIR)
             BreakBlock(cmd->position, cmd->direction);
     }
 }
@@ -243,6 +245,7 @@ void ChunkManager::BreakBlock(glm::vec3 position, glm::vec3 dir) {
     util::Ray       ray(position, glm::normalize(dir));
     constexpr float kStepSize = 0.1f;
     constexpr int   kMaxSteps = 40;  // 4.0 blocks reach
+    const auto&     reg       = block::BlockRegistry::Get();
     for (int i = 0; i < kMaxSteps; i++) {
         auto hitPoint = ray.At(i * kStepSize);
 
@@ -255,9 +258,9 @@ void ChunkManager::BreakBlock(glm::vec3 position, glm::vec3 dir) {
 
         auto it = loaded_chunks_.find(chunkCoord);
         if (it != loaded_chunks_.end()) {
-            auto&       chunk        = it->second;
-            Voxel::Type voxelHitType = chunk->GetVoxelAtCoord(localCoord);
-            if (Voxel::IsSolid(voxelHitType)) {
+            auto& chunk      = it->second;
+            auto  blockHitId = chunk->GetBlockAtCoord(localCoord);
+            if (reg.GetBlock(blockHitId).IsSolid()) {
                 chunk->BreakBlock(localCoord);
                 MarkDirty(chunkCoord, false, localCoord);
                 return;
