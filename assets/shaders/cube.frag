@@ -2,7 +2,7 @@
 out vec4 FragColor;
 
 in vec2 TexCoord;
-in float BlockType;
+flat in uint BlockType;
 in vec3 Normal;
 
 struct Light {
