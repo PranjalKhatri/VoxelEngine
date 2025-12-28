@@ -9,6 +9,7 @@
 #include "graphics/shader.hpp"
 #include "graphics/vertex_buffers.hpp"
 #include "block/block_ids.hpp"
+#include "voxel/vertex_data.hpp"
 #include <array>
 #include <memory>
 #include <vector>
@@ -22,7 +23,7 @@ struct FaceGeometry {
     static constexpr int kStride      = 5;
     static constexpr int kVertexCount = 6;
 
-    static constexpr const float* GetFace(util::direction faceDirection);
+    static constexpr const uint32_t* GetFace(util::direction faceDirection);
 };
 class ChunkRenderable : public Renderable {
    public:
@@ -36,15 +37,10 @@ class ChunkRenderable : public Renderable {
 
     void AddTexture(std::shared_ptr<gfx::rtypes::TextureBinding> texture);
     void AddAttribute(const gfx::Attribute& attribute);
-    void AddVertexData(const std::vector<float>& data);
+    void AddVertexData(const std::vector<vertex_data::VertexType>& data);
     void SetChunkOffset(const glm::ivec3& offset) { chunk_offset_ = offset; }
-    void clearData() {
-        vertex_data_->clear();
-        attributes_.clear();
-        textures_.clear();
-        // num_vertices_ = 0;
-    }
-    std::vector<float>& VertexData() { return *vertex_data_; }
+    void ClearData();
+    std::vector<vertex_data::VertexType>& VertexData() { return *vertex_data_; }
 
    private:
     bool              first_upload_{true};
@@ -58,8 +54,8 @@ class ChunkRenderable : public Renderable {
 
     glm::ivec3 chunk_offset_{};
 
-    std::unique_ptr<std::vector<float>> vertex_data_;
-    std::vector<gfx::Attribute>         attributes_;
+    std::unique_ptr<std::vector<vertex_data::VertexType>> vertex_data_;
+    std::vector<gfx::Attribute>                           attributes_;
 };
 
 class Chunk {
@@ -116,50 +112,50 @@ class Chunk {
     std::array<std::shared_ptr<ChunkRenderable>, kNumMeshes> meshes_{};
 };
 // 6 vertices * (3 pos + 2 uv) = 30 floats per face
-inline constexpr float kTopFace[] = {
+inline constexpr uint32_t kTopFace[] = {
     // pos              // uv
     0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1,
 
     1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0,
 };
 
-inline constexpr float kBottomFace[] = {
+inline constexpr uint32_t kBottomFace[] = {
     0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0,
 
     1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1,
 };
 
-inline constexpr float kNorthFace[] = {
+inline constexpr uint32_t kNorthFace[] = {
     // -Z
     1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 1,
 
     0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0,
 };
 
-inline constexpr float kSouthFace[] = {
+inline constexpr uint32_t kSouthFace[] = {
     // +Z
     0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1,
 
     1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0,
 };
 
-inline constexpr float kWestFace[] = {
+inline constexpr uint32_t kWestFace[] = {
     // -X
     0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1,
 
     0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0,
 };
 
-inline constexpr float kEastFace[] = {
+inline constexpr uint32_t kEastFace[] = {
     // +X
     1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1,
 
     1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0,
 };
 
-inline constexpr const float*
+inline constexpr const uint32_t*
     kFaceTable[static_cast<size_t>(util::direction::kCount)] = {
         kTopFace, kBottomFace, kNorthFace, kSouthFace, kWestFace, kEastFace,
 };
-inline constexpr const float kNormalTable[] = {0, 1, 2, 3, 4, 5};
+inline constexpr const uint32_t kNormalTable[] = {0, 1, 2, 3, 4, 5};
 };  // namespace pop::voxel

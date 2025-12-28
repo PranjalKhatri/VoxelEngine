@@ -8,6 +8,7 @@
 #include "graphics/shader.hpp"
 #include "graphics/vertex_buffers.hpp"
 #include "voxel/terrain_generator.hpp"
+#include "voxel/vertex_data.hpp"
 #include <iostream>
 #include <memory>
 
@@ -17,7 +18,7 @@ using util::direction;
 ChunkRenderable::ChunkRenderable(gfx::ShaderHandle shaderId, bool isTransparent)
     : is_transparent_(isTransparent),
       shader_id_{shaderId},
-      vertex_data_{std::make_unique<std::vector<float>>()} {}
+      vertex_data_{std::make_unique<std::vector<vertex_data::VertexType>>()} {}
 
 ChunkRenderable::~ChunkRenderable() {
     // std::cout << "Chunk renderable destructor called, vao_ " << vao_.id()
@@ -29,7 +30,15 @@ gfx::ShaderHandle ChunkRenderable::GetShaderProgId() const {
 void ChunkRenderable::AddAttribute(const gfx::Attribute &attribute) {
     attributes_.push_back(attribute);
 }
-void ChunkRenderable::AddVertexData(const std::vector<float> &data) {
+
+void ChunkRenderable::ClearData() {
+    vertex_data_->clear();
+    attributes_.clear();
+    textures_.clear();
+}
+
+void ChunkRenderable::AddVertexData(
+    const std::vector<vertex_data::VertexType> &data) {
     vertex_data_->insert(vertex_data_->end(), data.begin(), data.end());
 }
 void ChunkRenderable::AddTexture(
@@ -55,8 +64,8 @@ void ChunkRenderable::Upload() {
     vao_.Bind();
     vbo_.Bind();
 
-    vbo_.BufferData(vertex_data_->size() * sizeof(float), vertex_data_->data(),
-                    GL_DYNAMIC_DRAW);
+    vbo_.BufferData(vertex_data_->size() * sizeof(vertex_data::VertexType),
+                    vertex_data_->data(), GL_DYNAMIC_DRAW);
 
     if (first_upload_) {
         for (const auto &attr : attributes_) {
@@ -65,7 +74,7 @@ void ChunkRenderable::Upload() {
     }
     vbo_.UnBind();
     vao_.UnBind();
-    num_vertices_ = vertex_data_->size() / 7;
+    num_vertices_ = vertex_data_->size();
     // std::cout << "Chunk Renderale uploaded " << vertex_data_->size()
     //           << " values; vao_: " << vao_.id() << "\n";
     vertex_data_->clear();  // free heap memmory after sending it to gpu
@@ -92,7 +101,7 @@ inline int BlockIdToTexture(block::BlockID blockId) {
     return 0;
 }
 //==============FaceGeometry==============
-constexpr const float *FaceGeometry::GetFace(direction faceDirection) {
+constexpr const uint32_t *FaceGeometry::GetFace(direction faceDirection) {
     return kFaceTable[static_cast<int>(faceDirection)];
 }
 // ==============CHUNK===============
@@ -141,7 +150,7 @@ void Chunk::GenerateMesh() {
 }
 void Chunk::ReGenerate() {
     for (int i = 0; i < kNumMeshes; i++) {
-        meshes_[i]->clearData();
+        meshes_[i]->ClearData();
     }
     GenerateRenderable();
 }
@@ -210,16 +219,10 @@ void Chunk::GenerateRenderable() {
             }
         }
     }
-    int stride = sizeof(float) * 7;
+    // int stride = sizeof(float) * 7;
     for (auto &mesh : meshes_) {
         if (!mesh) continue;
-        mesh->AddAttribute({0, 3, gfx::GLType::kFloat, false, stride, 0});
-        mesh->AddAttribute(
-            {1, 2, gfx::GLType::kFloat, false, stride, 3 * sizeof(float)});
-        mesh->AddAttribute(
-            {2, 1, gfx::GLType::kFloat, false, stride, 5 * sizeof(float)});
-        mesh->AddAttribute(
-            {3, 1, gfx::GLType::kFloat, false, stride, 6 * sizeof(float)});
+        mesh->AddAttribute({0, 1, gfx::GLType::kUInt, false, 0, 0});
         mesh->SetChunkOffset(chunk_offset_);
     }
 }
@@ -260,16 +263,16 @@ void Chunk::GenerateBlock(int x, int y, int z, block::BlockID blockId,
     auto       &verts = mesh->VertexData();
 
     auto emit_face = [&](direction dir) {
-        const float *face = FaceGeometry::GetFace(dir);
+        const uint32_t *face = FaceGeometry::GetFace(dir);
 
         for (int i = 0; i < floats_per_face; i += 5) {
-            verts.push_back(face[i + 0] + x);  // px
-            verts.push_back(face[i + 1] + y);  // py
-            verts.push_back(face[i + 2] + z);  // pz
-            verts.push_back(face[i + 3]);      // u
-            verts.push_back(face[i + 4]);      // v
-            verts.push_back(kNormalTable[static_cast<int>(dir)]);
-            verts.push_back(block.GetTextureCode(dir));
+            int nx = face[i + 0] + x;
+            int ny = face[i + 1] + y;
+            int nz = face[i + 2] + z;
+            verts.push_back(vertex_data::PackData(
+                nx, ny, nz, kNormalTable[static_cast<int>(dir)],
+                block.GetTextureCode(dir)));
+            // verts.push_back(block.GetTextureCode(dir));
         }
     };
     if (ShouldDrawFace(blockId, GetBlockId(x, y + 1, z)))
