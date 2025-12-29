@@ -7,7 +7,7 @@
 #include "graphics/rendertypes.hpp"
 #include "graphics/shader.hpp"
 #include "graphics/vertex_buffers.hpp"
-#include "voxel/terrain_generator.hpp"
+#include "world/terrain_generator.hpp"
 #include "voxel/vertex_data.hpp"
 #include <iostream>
 #include <memory>

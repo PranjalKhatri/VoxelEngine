@@ -1,5 +1,4 @@
-#include "voxel/terrain_generator.hpp"
-#include "voxel/chunk.hpp"
+#include "world/terrain_generator.hpp"
 
 namespace pop::voxel::terrain {
 
