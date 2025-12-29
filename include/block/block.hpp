@@ -8,14 +8,14 @@
 namespace pop::block {
 class Block {
    public:
-    struct Settings {
+    struct Properties {
         bool        isSolid       = true;
         bool        isTranslucent = false;
         BlockUV     uv            = 0;
         std::string name          = "Unknown";
     };
 
-    Block(Settings settings) : settings_(settings) {}
+    Block(Properties settings) : settings_(settings) {}
     virtual ~Block() = default;
 
     bool    IsSolid() const { return settings_.isSolid; }
@@ -25,6 +25,6 @@ class Block {
     const std::string& GetName() const { return settings_.name; }
 
    protected:
-    Settings settings_;
+    Properties settings_;
 };
 }  // namespace pop::block
