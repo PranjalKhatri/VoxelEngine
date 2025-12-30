@@ -17,7 +17,7 @@ uniform sampler2D textureAtlas;
 void main()
 {
     vec4 Biomecolor = vec4(1.0);
-    float totalTiles = 5.0;
+    float totalTiles = 7.0;
     float tileHeight = 1.0 / totalTiles;
 
     float localX = fract(TexCoord.x);
