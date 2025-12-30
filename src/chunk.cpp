@@ -1,4 +1,6 @@
 #include "voxel/chunk.hpp"
+#include "biome/biome_reigstry.hpp"
+#include "biome/biome_resolver.hpp"
 #include "block/block_ids.hpp"
 #include "block/block_registry.hpp"
 #include "util/directions.hpp"
@@ -9,6 +11,7 @@
 #include "graphics/vertex_buffers.hpp"
 #include "world/terrain_generator.hpp"
 #include "voxel/vertex_data.hpp"
+#include "world/world.hpp"
 #include <iostream>
 #include <memory>
 
@@ -108,7 +111,7 @@ constexpr const uint32_t *FaceGeometry::GetFace(direction faceDirection) {
 Chunk::Chunk(glm::ivec3 chunkOffset) : chunk_offset_(chunkOffset) {
     voxel_data_ =
         std::make_unique<block::BlockID[]>(kSize_x * kSize_y * kSize_z);
-    PopulateFromHeightMap();
+    GenerateChunkBlockData();
 }
 
 block::BlockID Chunk::GetBlockAtCoord(const glm::ivec3 &coord) const {
@@ -154,44 +157,48 @@ void Chunk::ReGenerate() {
     }
     GenerateRenderable();
 }
-void Chunk::PopulateFromHeightMap() {
-    auto &instance = terrain::TerrainGenerator::GetInstance();
-    // auto  SetBlock = [&](int x, int y, int z, Voxel::Type vtype) {
-    //     voxel_data_[Index(x, y, z)].SetType(vtype);
-    // };
+void Chunk::GenerateChunkBlockData() {
+    auto &world         = world::World::Get();
+    auto &terrainGen    = world.GetGenerator();
+    auto &biomeRes      = biome::BiomeResolver::Get();
+    auto &biomeReg      = biome::BiomeRegistry::Get();
+    auto &climateModule = world.GetClimate();
+
     for (int x = 0; x < kSize_x; x++) {
         for (int z = 0; z < kSize_z; z++) {
-            bool surfaceFound = false;
+            int worldX = x + chunk_offset_.x;
+            int worldZ = z + chunk_offset_.z;
+
+            float temp =
+                climateModule.GetTemperatureAt(worldX, kBaseHeight, worldZ);
+            float rain =
+                climateModule.GetPrecipitationAt(worldX, kBaseHeight, worldZ);
+            auto        type  = biomeRes.GetBiomeAt(temp, rain);
+            const auto &biome = biomeReg.GetBiome(type);
+            /*
+            if (x == 0 && z == 0) {
+                std::cout << "Coord: " << x + chunk_offset_.x << ","
+                          << z + chunk_offset_.z << " | Temp: " << temp
+                          << " | Precip: " << rain
+                          << " | Biome: " << biome.GetName() << std::endl;
+            }
+            */
+            int         depth = 0;
+
             for (int y = kSize_y - 1; y >= 0; y--) {
                 auto  index   = Index(x, y, z);
-                float density = instance.GetDensity(chunk_offset_.x + x,
-                                                    chunk_offset_.y + y,
-                                                    chunk_offset_.z + z);
+                int   worldY  = y + chunk_offset_.y;
+                float density = terrainGen.GetDensity(worldX, worldY, worldZ);
                 if (density > 0) {
-                    if (!surfaceFound) {
-                        if (y >= kWaterBaseline - 1) {
-                            SetBlockType(
-                                index,
-                                block::IDs::GRASS);  // The very top layer
-                        } else {
-                            SetBlockType(index,
-                                         block::IDs::SAND);  // Underwater floor
-                        }
-                        surfaceFound = true;
-                    } else if (y > (kWaterBaseline - 4) &&
-                               y < (kWaterBaseline)) {
-                        // Just a little dirt/sand under the surface before
-                        // stone starts
-                        SetBlockType(index, block::IDs::DIRT);
-                    } else {
-                        SetBlockType(index,
-                                     block::IDs::STONE);  // Deep underground
-                    }
+                    // Ground: Let the Biome decide the block
+                    block::BlockID bid = biome.GetBlockAt(density, depth, y);
+                    SetBlockType(index, bid);
+                    depth++;
                 } else {
+                    // Empty: Water vs Air
+                    depth = 0;  // Reset depth for overhangs
                     if (y <= kWaterBaseline) {
-                        SetBlockType(index,
-                                     block::IDs::WATER);  // Fill empty gaps
-                                                          // below sea level
+                        SetBlockType(index, block::IDs::WATER);
                     } else {
                         SetBlockType(index, block::IDs::AIR);
                     }
@@ -199,6 +206,51 @@ void Chunk::PopulateFromHeightMap() {
             }
         }
     }
+    /*auto &instance = terrain::TerrainGenerator::GetInstance();
+   // auto  SetBlock = [&](int x, int y, int z, Voxel::Type vtype) {
+   //     voxel_data_[Index(x, y, z)].SetType(vtype);
+   // };
+   for (int x = 0; x < kSize_x; x++) {
+       for (int z = 0; z < kSize_z; z++) {
+           bool surfaceFound = false;
+           for (int y = kSize_y - 1; y >= 0; y--) {
+               auto  index   = Index(x, y, z);
+               float density = instance.GetDensity(chunk_offset_.x + x,
+                                                   chunk_offset_.y + y,
+                                                   chunk_offset_.z + z);
+               if (density > 0) {
+                   if (!surfaceFound) {
+                       if (y >= kWaterBaseline - 1) {
+                           SetBlockType(
+                               index,
+                               block::IDs::GRASS);  // The very top layer
+                       } else {
+                           SetBlockType(index,
+                                        block::IDs::SAND);  // Underwater floor
+                       }
+                       surfaceFound = true;
+                   } else if (y > (kWaterBaseline - 4) &&
+                              y < (kWaterBaseline)) {
+                       // Just a little dirt/sand under the surface before
+                       // stone starts
+                       SetBlockType(index, block::IDs::DIRT);
+                   } else {
+                       SetBlockType(index,
+                                    block::IDs::STONE);  // Deep underground
+                   }
+               } else {
+                   if (y <= kWaterBaseline) {
+                       SetBlockType(index,
+                                    block::IDs::WATER);  // Fill empty gaps
+                                                         // below sea level
+                   } else {
+                       SetBlockType(index, block::IDs::AIR);
+                   }
+               }
+           }
+       }
+   }
+   */
 }
 
 void Chunk::GenerateRenderable() {
