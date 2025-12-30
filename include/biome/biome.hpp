@@ -12,9 +12,11 @@ class Biome {
         float       heightVariation = 0.1f;
         int         temperature     = 30.0f;
         int         precipitation   = 200.0f;
+        // Color to show on the biome diagram(3 bytes)
+        int mapColor = 0x00FF00;
     };
     Biome(Properties properties) : properties_(properties) {}
-    virtual ~Biome();
+    virtual ~Biome() = default;
     // Get the name of this biome
     std::string GetName() const { return properties_.biomeName; }
     Properties  GetProperties() const { return properties_; }
@@ -30,4 +32,6 @@ class Biome {
    private:
     Properties properties_;
 };
+
+void RegisterAllBiomes();
 }  // namespace pop::biome
