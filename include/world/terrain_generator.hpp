@@ -4,10 +4,14 @@
 namespace pop::voxel::terrain {
 class TerrainGenerator {
    public:
-    static TerrainGenerator& GetInstance() {
-        static TerrainGenerator instance;
-        return instance;
-    }
+    struct Properties {
+        int   seed       = 1337;
+        float frequency  = 0.02f;
+        float heightBias = 64.0f;  // surface height
+        float hardness   = 15.0f;  // how steep the density drop off is
+    };
+    TerrainGenerator(Properties properties);
+    TerrainGenerator() : TerrainGenerator(Properties{}) {}
 
     TerrainGenerator(const TerrainGenerator&)            = delete;
     TerrainGenerator(TerrainGenerator&&)                 = delete;
@@ -19,10 +23,10 @@ class TerrainGenerator {
     float GetDensity(float x, float y, float z);
 
    private:
-    TerrainGenerator();
+    void SetupNoise();
+
+   private:
     FastNoiseLite noise_;
-    const float   kFrequency  = 0.02f;
-    const float   kHeightBias = 64.0f;  // Surface targets roughly y=64
-    const float   kHardness   = 15.0f;  // How "steep" the density drop-off is
+    Properties    properties_;
 };
 }  // namespace pop::voxel::terrain
