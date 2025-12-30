@@ -20,10 +20,10 @@ class BiomeResolver {
         static BiomeResolver instance;
         return instance;
     }
-    void AddPoint(const BiomePoint& point);
+    void      AddPoint(const BiomePoint& point);
     // generate the voronoi map and lookup table
     void      Bake(std::string_view outputPath = "BiomeDiagram.ppm");
-    BiomeType GetBiomeAt(int tempC, int precipCm) const;
+    BiomeType GetBiomeAt(float tempC, float precipCm) const;
 
    private:
     BiomeResolver() = default;
