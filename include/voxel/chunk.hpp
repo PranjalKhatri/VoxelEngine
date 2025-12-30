@@ -95,7 +95,7 @@ class Chunk {
     void GenerateBlock(int x, int y, int z, block::BlockID block,
                        const std::shared_ptr<ChunkRenderable>& mesh);
     void GenerateRenderable();
-    void PopulateFromHeightMap();
+    void GenerateChunkBlockData();
     bool ShouldDrawFace(block::BlockID current, block::BlockID neighbor) const;
 
     block::BlockID GetLocalBlockId(int x, int y, int z) const;
