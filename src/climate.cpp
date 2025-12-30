@@ -43,6 +43,6 @@ float ClimateModule::GetPrecipitationAt(int x, int /*y*/, int z) const {
     float baseHumidity =
         s.meanPrecipitation +
         noiseSample * (s.maxPrecipitation - s.minPrecipitation);
-    return std::clamp(baseHumidity, 0.0f, 1.0f);
+    return std::clamp(baseHumidity, s.minPrecipitation, s.maxPrecipitation);
 }
 };  // namespace pop::world::climate
