@@ -17,8 +17,9 @@ class BiomeRegistry {
         auto biomeInstance = std::make_unique<T>();
         auto props         = biomeInstance->GetProperties();
 
-        BiomeResolver::Get().AddPoint(
-            {(float)props.temperature, (float)props.precipitation, type});
+        BiomeResolver::Get().AddPoint({(float)props.temperature,
+                                       (float)props.precipitation, type,
+                                       props.mapColor});
 
         registry_[type] = std::move(biomeInstance);
     }
