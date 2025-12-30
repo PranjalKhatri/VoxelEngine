@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string_view>
 #include <vector>
 #include <memory>
 #include "biome_types.hpp"
@@ -10,6 +11,7 @@ struct BiomePoint {
     float     tempC;
     float     precipCm;
     BiomeType type;
+    int       biomeColor = 0x800080;
 };
 
 class BiomeResolver {
@@ -18,13 +20,15 @@ class BiomeResolver {
         static BiomeResolver instance;
         return instance;
     }
-    void AddPoint(const BiomePoint& point) { points_.push_back(point); }
+    void AddPoint(const BiomePoint& point);
     // generate the voronoi map and lookup table
-    void      Bake();
+    void      Bake(std::string_view outputPath = "BiomeDiagram.ppm");
     BiomeType GetBiomeAt(int tempC, int precipCm) const;
 
    private:
     BiomeResolver() = default;
+    void WriteToFile(std::string_view filePath);
+    int  Index(int x, int y) const { return x * kTableSize + y; }
 
     std::unique_ptr<uint8_t[]> lookup_table_;
     std::vector<BiomePoint>    points_;
