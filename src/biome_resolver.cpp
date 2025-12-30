@@ -54,6 +54,18 @@ void BiomeResolver::Bake(std::string_view outputPath) {
 
     WriteToFile(outputPath);
 }
+BiomeType BiomeResolver::GetBiomeAt(float tempC, float precipCm) const {
+    if (!lookup_table_) return BiomeType::kPlains;
+
+    int x =
+        static_cast<int>((tempC - kMinTemp) / kTempRange * (kTableSize - 1));
+    int y = static_cast<int>(precipCm / kMaxPrecip * (kTableSize - 1));
+
+    x = std::max(0, std::min(x, kTableSize - 1));
+    y = std::max(0, std::min(y, kTableSize - 1));
+
+    return static_cast<BiomeType>(lookup_table_[Index(x, y)]);
+}
 void BiomeResolver::WriteToFile(std::string_view filePath) {
     std::ofstream ofs(std::string(filePath), std::ios::binary);
     // PPM Header: P6 (Binary), Width, Height, Max Color Value
@@ -63,7 +75,7 @@ void BiomeResolver::WriteToFile(std::string_view filePath) {
         for (int y = 0; y < kTableSize; y++) {
             BiomeType type = static_cast<BiomeType>(lookup_table_[Index(x, y)]);
             // TODO: change this to make fast instead of lookup everytime
-            int color = 0x000000;
+            int       color = 0x000000;
             for (const auto& p : points_) {
                 if (p.type == type) {
                     color = p.biomeColor;
