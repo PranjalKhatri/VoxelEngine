@@ -4,6 +4,7 @@ out vec4 FragColor;
 in vec2 TexCoord;
 flat in uint BlockType;
 in vec3 Normal;
+flat in vec4 vertexColor;
 
 struct Light {
     vec3 direction;
@@ -42,5 +43,6 @@ void main()
     vec3 diffuse = SunLight.diffuse * diff;
 
     vec3 finalColor = texColor.rgb * (ambient + diffuse);
+    finalColor = finalColor * vertexColor.rgb;
     FragColor = vec4(finalColor, 1.0);
 }
