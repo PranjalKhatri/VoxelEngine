@@ -4,7 +4,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "biome/biome.hpp"
+#include "biome/biome_resolver.hpp"
+#include "block/block_ids.hpp"
 #include "core/engine.hpp"
+#include "core/input_manager.hpp"
 #include "gl/gl_types.hpp"
 #include "glm/fwd.hpp"
 #include "gl/popglfw.hpp"
@@ -12,6 +16,7 @@
 #include "graphics/shader.hpp"
 #include "stb_image.h"
 #include "graphics/camera.hpp"
+#include "voxel/chunk.hpp"
 #include "voxel/chunk_system.hpp"
 
 #include <iostream>
@@ -54,8 +59,9 @@ int main() {
     glm::mat4 projection = glm::tweakedInfinitePerspective(fov, aspect, near);
     core::Engine engine{projection, window};
 
-    auto cam = std::make_shared<FlyCam>(glm::vec3{0, voxel::Chunk::kSize_y, 3},
-                                        glm::vec3{0, 0, 0}, glm::vec3{0, 1, 0});
+    auto cam = std::make_shared<FlyCam>(
+        glm::vec3{0, voxel::Chunk::kBaseHeight + 10, 3}, glm::vec3{0, 0, 0},
+        glm::vec3{0, 1, 0});
     engine.SetMainCamera(cam);
     std::cout << "Engine initialization done!\n";
     // // Shader
@@ -82,7 +88,6 @@ int main() {
         VoxelShader->SetUniformInt("tex1", 0);
         WaterShader->use();
         WaterShader->SetUniformInt("tex1", 0);
-        // cubeShader->SetUniformInt("tex2", 1);
     }
 
     auto textureAtlas =
@@ -90,29 +95,27 @@ int main() {
             std::make_shared<Texture>(TextureType::kTexture2D), 0});
 
     textureAtlas->texture->LoadFromFile("assets/textures/VoxelTextures.png",
-                                        false);
-    /*
-    auto chunk = std::make_shared<voxel::Chunk>(glm::ivec3(0, 0, 0));
-    chunk->SetShader(cubeShader->id());
-    chunk->GenerateMesh();
-    chunk->GetSolidRenderable()->AddTexture(wood);
-    engine.AddRenderable(chunk->GetSolidRenderable());
-    */
+                                        true);
+    voxel::ChunkManager chunkSystem{cam.get()};
+    chunkSystem.SetShader(gfx::rtypes::MeshType::kSolidMesh, VoxelShader->id());
+    chunkSystem.SetShader(gfx::rtypes::MeshType::kWaterMesh, WaterShader->id());
+    chunkSystem.SetTexture(textureAtlas);
 
-    /*
-    auto cube = std::make_shared<gfx::CubeRenderable>(
-        cubeShader->id(), "assets/textures/wood.jpg",
-        "assets/textures/face.png");
-    std::cout << "chunk shader set and constructed\n";
-    // engine.AddRenderable(cube);
-    */
-    voxel::ChunkManager manager{cam.get()};
-    manager.SetShader(gfx::rtypes::MeshType::kSolidMesh, VoxelShader->id());
-    manager.SetShader(gfx::rtypes::MeshType::kWaterMesh, WaterShader->id());
-    manager.SetTexture(textureAtlas);
     engine.AddShaderProgram(std::move(VoxelShader));
     engine.AddShaderProgram(std::move(WaterShader));
-    std::thread chunkSystemThread{&voxel::ChunkManager::Run, &manager,
+
+    biome::RegisterAllBiomes();
+    biome::BiomeResolver::Get().Bake();
+
+    // TODO: do something about this design
+    // breaking block
+    engine.GetInputManager().RegisterMouseAction(
+        GLFW_MOUSE_BUTTON_1, [&chunkSystem, &cam]() {
+            chunkSystem.AddChunkBlockCmd(
+                {cam->GetPosition(), cam->GetForward(), block::IDs::AIR});
+        });
+
+    std::thread chunkSystemThread{&voxel::ChunkManager::Run, &chunkSystem,
                                   std::ref(engine)};
     engine.Run();
     chunkSystemThread.join();
