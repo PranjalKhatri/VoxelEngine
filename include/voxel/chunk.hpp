@@ -37,10 +37,10 @@ class ChunkRenderable : public Renderable {
 
     void AddTexture(std::shared_ptr<gfx::rtypes::TextureBinding> texture);
     void AddAttribute(const gfx::Attribute& attribute);
-    void AddVertexData(const std::vector<vertex_data::VertexType>& data);
+    void AddVertexData(const std::vector<vertex_data::VertexData>& data);
     void SetChunkOffset(const glm::ivec3& offset) { chunk_offset_ = offset; }
     void ClearData();
-    std::vector<vertex_data::VertexType>& VertexData() { return *vertex_data_; }
+    std::vector<vertex_data::VertexData>& VertexData() { return *vertex_data_; }
 
    private:
     bool              first_upload_{true};
@@ -54,7 +54,7 @@ class ChunkRenderable : public Renderable {
 
     glm::ivec3 chunk_offset_{};
 
-    std::unique_ptr<std::vector<vertex_data::VertexType>> vertex_data_;
+    std::unique_ptr<std::vector<vertex_data::VertexData>> vertex_data_;
     std::vector<gfx::Attribute>                           attributes_;
 };
 
@@ -81,8 +81,8 @@ class Chunk {
     block::BlockID GetBlockAtCoord(const glm::ivec3& coord) const;
     void           GenerateMesh();
     // call to regenerate the mesh on existing chunkrenderable
-    void ReGenerate();
-    void SetNeighbors(const NeighborArray& neighbors) {
+    void           ReGenerate();
+    void           SetNeighbors(const NeighborArray& neighbors) {
         neighbors_ = neighbors;
     }
     void SetShader(gfx::rtypes::MeshType shaderMeshType,

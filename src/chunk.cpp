@@ -21,7 +21,7 @@ using util::direction;
 ChunkRenderable::ChunkRenderable(gfx::ShaderHandle shaderId, bool isTransparent)
     : is_transparent_(isTransparent),
       shader_id_{shaderId},
-      vertex_data_{std::make_unique<std::vector<vertex_data::VertexType>>()} {}
+      vertex_data_{std::make_unique<std::vector<vertex_data::VertexData>>()} {}
 
 ChunkRenderable::~ChunkRenderable() {
     // std::cout << "Chunk renderable destructor called, vao_ " << vao_.id()
@@ -41,7 +41,7 @@ void ChunkRenderable::ClearData() {
 }
 
 void ChunkRenderable::AddVertexData(
-    const std::vector<vertex_data::VertexType> &data) {
+    const std::vector<vertex_data::VertexData> &data) {
     vertex_data_->insert(vertex_data_->end(), data.begin(), data.end());
 }
 void ChunkRenderable::AddTexture(
@@ -61,19 +61,23 @@ void ChunkRenderable::Upload() {
         return;
     }
     if (attributes_.empty()) {
-        std::cout << "Attributes not filled\n";
+        // std::cout << "Attributes not filled\n";
     }
 
     vao_.Bind();
     vbo_.Bind();
 
-    vbo_.BufferData(vertex_data_->size() * sizeof(vertex_data::VertexType),
+    vbo_.BufferData(vertex_data_->size() * sizeof(vertex_data::VertexData),
                     vertex_data_->data(), GL_DYNAMIC_DRAW);
 
     if (first_upload_) {
-        for (const auto &attr : attributes_) {
+        const auto &vertexAttributes = vertex_data::GetVertexAttributes();
+        for (const auto &attr : vertexAttributes) {
             vao_.AddAttribute(attr);
         }
+        // for (const auto &attr : attributes_) {
+        //     vao_.AddAttribute(attr);
+        // }
     }
     vbo_.UnBind();
     vao_.UnBind();
@@ -274,7 +278,7 @@ void Chunk::GenerateRenderable() {
     // int stride = sizeof(float) * 7;
     for (auto &mesh : meshes_) {
         if (!mesh) continue;
-        mesh->AddAttribute({0, 1, gfx::GLType::kUInt, false, 0, 0});
+        // mesh->AddAttribute({0, 1, gfx::GLType::kUInt, false, 0, 0});
         mesh->SetChunkOffset(chunk_offset_);
     }
 }
@@ -321,9 +325,9 @@ void Chunk::GenerateBlock(int x, int y, int z, block::BlockID blockId,
             int nx = face[i + 0] + x;
             int ny = face[i + 1] + y;
             int nz = face[i + 2] + z;
-            verts.push_back(vertex_data::PackData(
+            verts.emplace_back(vertex_data::PackVertexData(
                 nx, ny, nz, kNormalTable[static_cast<int>(dir)],
-                block.GetTextureCode(dir)));
+                block.GetTextureCode(dir), 255, 255, 255, 255));
             // verts.push_back(block.GetTextureCode(dir));
         }
     };
