@@ -18,9 +18,9 @@ class GLBuffer {
     GLBuffer(GLBuffer&&) noexcept;
     GLBuffer& operator=(GLBuffer&&) noexcept;
     // Returns the buffer id
-    GLuint id() const { return buffer_id_; }
+    GLuint    id() const { return buffer_id_; }
     // Binds this buffer object to the specified target
-    void Bind();
+    void      Bind();
 
     void Generate();
     // UnBinds this buffer object to avoid state pollution
@@ -36,9 +36,10 @@ struct Attribute {
     GLuint      index;       // attribute location
     GLint       components;  // 1–4
     GLType      type;        // GL_FLOAT, GL_INT, ...
-    bool        normalized;  // normalize integer types?
+    bool        normalized;  // normalize integer types?valid if pureInt=false
     GLsizei     stride;      // bytes per vertex
     std::size_t offset;      // byte offset in struct
+    bool        isPureInt;   // if true calls vertexAttribIpointer
 };
 class VertexArray {
    public:
@@ -51,13 +52,13 @@ class VertexArray {
     VertexArray(VertexArray&&) noexcept;
     VertexArray& operator=(VertexArray&&) noexcept;
     // Returns the Vertex array id
-    GLuint id() const { return array_id_; }
-    void   Generate();
+    GLuint       id() const { return array_id_; }
+    void         Generate();
     // Binds this vertexArray
-    void Bind();
-    void UnBind();
+    void         Bind();
+    void         UnBind();
     // Adds and enables the attribute
-    void AddAttribute(Attribute attribute);
+    void         AddAttribute(Attribute attribute);
 
    private:
     GLuint array_id_{};

@@ -90,13 +90,7 @@ void VertexArray::UnBind() { glBindVertexArray(0); }
 
 void VertexArray::AddAttribute(Attribute attribute) {
     Bind();
-    bool is_integer_type =
-        (attribute.type == GLType::kInt || attribute.type == GLType::kUInt ||
-         attribute.type == GLType::kShort ||
-         attribute.type == GLType::kUShort || attribute.type == GLType::kByte ||
-         attribute.type == GLType::kUByte);
-
-    if (is_integer_type) {
+    if (attribute.isPureInt) {
         glVertexAttribIPointer(attribute.index, attribute.components,
                                static_cast<GLenum>(attribute.type),
                                attribute.stride,
